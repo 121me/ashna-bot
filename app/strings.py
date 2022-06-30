@@ -78,7 +78,7 @@ translations = {
 
 		   "swipe_warning": "Reminder!\nKeep it in mind that there might be people impersonating someone else!\nProtect your privacy and DO NOT share any important personal information!",
 
-		   "match_noti": '''MATCH!!! Start talking with <a href="tg://user?id={}">{}</a> (you cannot talk with the sample users for test)''',
+		   "match_notification": '''MATCH!!! Start talking with <a href="tg://user?id={}">{}</a> (you cannot talk with the sample users for test)''',
 
 		   "continue_swipe": "Do you want to continue swiping?",
 		   "no_user": "There is no user out there for matching yet, check later again",

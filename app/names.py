@@ -33,7 +33,7 @@ def __remove_duplicates():
 
 
 # read 'names.txt'
-with open(file='static/names/names.txt', mode='r', encoding='utf-8') as names_txt:
+with open(file='../static/names/names.txt', mode='r', encoding='utf-8') as names_txt:
 	names = [name.strip() for name in names_txt.readlines()]
 
 

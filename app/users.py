@@ -28,13 +28,13 @@ def datetime_now() -> str:
 
 
 class UsersDB:
-	def __init__(self, dbname="static/db/users.db") -> None:
+	def __init__(self, dbname="../static/db/users.db") -> None:
 		self.dbname = dbname
 		try:
 			self.con = sqlite3.connect(dbname, check_same_thread=False)
 		except sqlite3.OperationalError:
 			# create a folder "static/db"
-			os.makedirs("static/db", exist_ok=True)
+			os.makedirs("../static/db", exist_ok=True)
 			self.con = sqlite3.connect(dbname, check_same_thread=False)
 		self.cur = self.con.cursor()
 		self.setup()
@@ -42,7 +42,7 @@ class UsersDB:
 	def setup(self) -> None:
 		stmt = """
 		CREATE TABLE IF NOT EXISTS users(
-			id INTEGER PRIMARY KEY,
+			id INTEGER,
 			name TEXT,
 			age INTEGER,
 			university TEXT,
@@ -247,13 +247,14 @@ class UsersDB:
 
 	# pending matches functions
 	def add_pending_match(self, user1: int, user2: int) -> None:
-		stmt = """
-		INSERT INTO pending_matches(user1, user2) VALUES(?, ?) ON CONFLICT(user1) DO UPDATE SET user2 = ?;"""
+		stmt = f"""
+		INSERT INTO pending_matches VALUES(?, ?, ?)"""
 		args = (
 			user1,
 			user2,
-			user2
+			datetime_now()
 		)
+		print(stmt, args)
 		self.cur.execute(stmt, args)
 		self.con.commit()
 
@@ -316,7 +317,7 @@ class UsersDB:
 
 		gso = gso.format(*g)
 
-		gso = " OR ".join(f'(gender = {pair[0]} AND so = {pair[1]})' for pair in gso.split('|')) + ' AND '
+		gso = "(" + " OR ".join(f'(gender = "{pair[0]}" AND so = "{pair[1]}")' for pair in gso.split('|')) + ') AND '
 
 		stmt = f"""
 		SELECT id

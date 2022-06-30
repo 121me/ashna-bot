@@ -271,6 +271,8 @@ def find_missing_for_profile(update: Update, context: CallbackContext) -> int:
 	user_id = update.effective_user.id
 	user_dict = users_db.get_user(user_id)
 
+	is_profile_complete = False
+
 	for v, k in list(steps_zip):
 		print(v, k)
 		if not user_dict[k]:
@@ -285,6 +287,7 @@ def find_missing_for_profile(update: Update, context: CallbackContext) -> int:
 		elif user_dict["profile_step"] in [10]:
 			users_db.change_profile_step(user_id, 10)
 			profile_step = IDLING
+			is_profile_complete = user_dict["is_profile_complete"]
 		else:
 			profile_step = 0
 			print("hey")
@@ -324,9 +327,16 @@ def find_missing_for_profile(update: Update, context: CallbackContext) -> int:
 			reply_markup=verify_method_reply_markup(lan))
 
 	elif profile_step == 10:
-		update.effective_message.reply_text(
-			text=translate("checking_profile", lan),
-			reply_markup=rps_inline_markup)
+		if is_profile_complete:
+			update.effective_message.reply_text(
+				text=translate("profile_completed", lan))
+			profile(update, context)
+			update.effective_message.reply_text(
+				text=translate("main_menu", lan))
+		else:
+			update.effective_message.reply_text(
+				text=translate("checking_profile", lan),
+				reply_markup=rps_inline_markup)
 
 	else:
 		update.effective_message.reply_text(
@@ -1006,14 +1016,14 @@ def swipe(update: Update, context: CallbackContext) -> int:
 				user_name_2 = users_db.get_user(user_id_2)["name"]
 				user_name = user_dict["name"]
 				update.effective_message.reply_text(
-					text=translate("match_notify", users_db.get_user(
+					text=translate("match_notification", users_db.get_user(
 						user_id)["lang"]).format(user_id_2, user_name_2),
 					parse_mode=ParseMode.HTML,
 					disable_web_page_preview=True)
 				try:
 					context.dispatcher.bot.send_message(
 						chat_id=user_id_2,
-						text=translate("match_notify", users_db.get_user(
+						text=translate("match_notification", users_db.get_user(
 							user_id)["lang"]).format(user_id, user_name),
 						parse_mode=ParseMode.HTML,
 						disable_web_page_preview=True)
@@ -1108,8 +1118,7 @@ def profile(update: Update, context: CallbackContext) -> None:
 
 	if not user_dict["is_profile_complete"]:
 		update.effective_message.reply_text(
-			text=translate("no_profile_no_command",
-						   user_dict["lang"]),
+			text=translate("no_profile_no_command", user_dict["lang"]),
 		)
 		return DONE
 
@@ -1120,6 +1129,8 @@ def profile(update: Update, context: CallbackContext) -> None:
 
 	user_name, user_university = user_dict["name"].title(
 	), user_dict["university"].title()
+
+	print(user_dict["media_type"])
 
 	if user_dict["media_type"] == 'jpg':
 		update.effective_message.reply_photo(
@@ -1148,15 +1159,19 @@ def send_swipe_profile(update: Update, swipe_user_id: int) -> None:
 	user_name, user_university = user_dict["name"].title(
 	), user_dict["university"].title()
 
-	if user_dict["media_type"] == 1:
+	print(user_dict["media_type"])
+
+	if user_dict["media_type"] == 'jpg':
 		update.effective_message.reply_photo(
 			photo=media_bytes,
-			caption=f"""{user_name}, {user_dict["age"]}, {user_university}\n:{'😁💬:'}{user_dict["bio"]}"""
+			caption=f"""{user_name}, {user_dict["age"]}, {user_university}\n:{'😁💬:'}{user_dict["bio"]}""",
+			reply_markup=decision_reply_markup
 		)
-	elif user_dict["media_type"] == 2:
+	elif user_dict["media_type"] == 'mp4':
 		update.effective_message.reply_video(
 			video=media_bytes,
-			caption=f"""{user_name}, {user_dict["age"]}, {user_university}\n:{'😁💬:'}{user_dict["bio"]}"""
+			caption=f"""{user_name}, {user_dict["age"]}, {user_university}\n:{'😁💬:'}{user_dict["bio"]}""",
+			reply_markup=decision_reply_markup
 		)
 	else:
 		update.effective_message.reply_text(
@@ -1185,8 +1200,11 @@ def verify_user(update: Update, context: CallbackContext) -> None:
 		context.dispatcher.bot.send_message(
 			chat_id=user_id,
 			text=translate('profile_completed', lan))
+		profile(update, context)
+		update.effective_message.reply_text(
+			text=translate("main_menu", lan))
 
-		# users_db.change_profile_step(user_id, COMPLETE)
+	# users_db.change_profile_step(user_id, COMPLETE)
 
 	update.effective_message.reply_text(text=f"{', '.join(map(str, user_ids))} marked as completed")  # map to list?
 
@@ -1297,7 +1315,6 @@ def main():
 			help_handler,
 			about_handler,
 			MessageHandler(Filters.all, unknown_for_profile),
-			unknown_handler
 		]
 	)
 
@@ -1330,7 +1347,7 @@ def main():
 			help_handler,
 			about_handler,
 			cancel_handler,
-			unknown_handler, ]
+		]
 	)
 
 	swipe_conv_handler = ConversationHandler(
@@ -1351,7 +1368,7 @@ def main():
 			help_handler,
 			about_handler,
 			cancel_handler,
-			unknown_handler, ]
+		]
 	)
 
 	handlers = [
