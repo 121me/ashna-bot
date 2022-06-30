@@ -1,0 +1,4 @@
+ankara.edu.tr:ankara
+bilkent.edu.tr:bilkent
+hacettepe.edu.tr:hacettepe
+metu.edu.tr:metu
