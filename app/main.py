@@ -17,7 +17,7 @@ import random
 from app.email_protocol import send_email
 from ashna_secrets import API_KEY, VERIFY_PASS, LIST_OF_ADMINS
 
-from strings import translate, detranslate
+from translations import translate, detranslate
 
 from app.names import check_name
 
@@ -1127,8 +1127,9 @@ def profile(update: Update, context: CallbackContext) -> None:
 	with open(file=user_media_path, mode="rb") as file:
 		media_bytes = file.read()
 
-	user_name, user_university = user_dict["name"].title(
-	), user_dict["university"].title()
+	user_name, user_university = user_dict["name"].title(), user_dict["university"].title()
+
+	print("hey", user_university, "hey")
 
 	print(user_dict["media_type"])
 
@@ -1156,8 +1157,7 @@ def send_swipe_profile(update: Update, swipe_user_id: int) -> None:
 	with open(file=user_media_path, mode="rb") as file:
 		media_bytes = file.read()
 
-	user_name, user_university = user_dict["name"].title(
-	), user_dict["university"].title()
+	user_name, user_university = user_dict["name"].title(), user_dict["university"].title()
 
 	print(user_dict["media_type"])
 
@@ -1184,6 +1184,28 @@ def send_message_to_admins(update: Update, context: CallbackContext, text: str) 
 		context.dispatcher.bot.send_message(
 			chat_id=admin_id,
 			text=text)
+
+
+@restricted
+def set_user_attrs(update: Update, context: CallbackContext) -> None:
+	# Message format: user_id user_attribute_1 value_1 user_attribute_2 value_2 ... user_attribute_n value_n
+	text = update.effective_message.text
+	try:
+		_, user_id, *args = text.split()
+	except ValueError:
+		update.effective_message.reply_text(
+			text="Message format: user_id user_attribute_1 value_1 user_attribute_2 value_2 ... user_attribute_n value_n")
+		return
+	print(user_id, args)
+	user_id = int(user_id)
+
+	# convert attrs to dictionary
+	attrs_values = dict(zip(args[::2], args[1::2]))
+	print(attrs_values)
+
+	# update user attrs
+	for attr, value in attrs_values.items():
+		users_db.edit_user_attr(user_id, attr, value)
 
 
 @restricted
@@ -1229,6 +1251,7 @@ def main():
 
 	# create handlers
 	verify_user_handler = CommandHandler('verify_user', verify_user)
+	set_user_attrs_handler = CommandHandler('set_user_attrs', set_user_attrs)
 	send_message_all_users_handler = CommandHandler('send_message_all_users', send_message_all_users)
 	start_handler = CommandHandler('start', start)
 	help_handler = CommandHandler('help', help_)
@@ -1373,6 +1396,7 @@ def main():
 
 	handlers = [
 		verify_user_handler,
+		set_user_attrs_handler,
 		send_message_all_users_handler,
 		swipe_conv_handler,
 		edit_profile_conv_handler,

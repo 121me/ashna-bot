@@ -150,7 +150,8 @@ class UsersDB:
 		self.con.commit()
 
 	def add_media(self, user_id: int, media_type: str) -> None:
-		stmt = "UPDATE users SET last_saved_media_name = last_saved_media_name + 1, profile_step = 6, media_type = ? WHERE id = ?;"
+		stmt = "UPDATE users SET last_saved_media_name = last_saved_media_name + 1, profile_step = 6, media_type = ? " \
+			   "WHERE id = ?; "
 		args = (media_type, user_id)
 		self.cur.execute(stmt, args)
 		self.con.commit()
@@ -225,25 +226,6 @@ class UsersDB:
 		args = (user_id,)
 		self.cur.execute(stmt, args)
 		self.con.commit()
-
-	# names functions
-	def add_db_names(self, names: list) -> None:
-		stmt = "INSERT INTO names VALUES (?, ?);"
-		args = names
-		self.cur.executemany(stmt, args)
-		self.con.commit()
-
-	def add_db_name(self, name: str, gender: str) -> None:
-		stmt = "INSERT INTO names VALUES (?, ?);"
-		args = (name, gender)
-		self.cur.execute(stmt, args)
-		self.con.commit()
-
-	def check_name(self, name: str) -> bool:
-		stmt = "SELECT EXISTS(SELECT 1 FROM names WHERE name = ?);"
-		args = (name,)
-		self.cur.execute(stmt, args)
-		return self.cur.fetchone() == (1,)
 
 	# pending matches functions
 	def add_pending_match(self, user1: int, user2: int) -> None:
@@ -379,12 +361,11 @@ class UsersDB:
 		self.cur.execute(stmt, args)
 		self.con.commit()
 
+	def edit_user_attr(self, user_id: int, attr: str, v: str or int) -> None:
+		stmt = f"UPDATE users SET {attr} = ? WHERE id = ?;"
+		args = (v, user_id)
+		self.cur.execute(stmt, args)
+		self.con.commit()
 
-"""
-with open(".\\isimleri-filtrele\\birlesik.txt", mode="r", encoding="utf-8-sig") as file:
-    lines = [line.strip('\n').split(',') for line in file.readlines()]
-
-test_db = UsersDB()
-test_db.add_db_names(lines)"""
 
 pass
