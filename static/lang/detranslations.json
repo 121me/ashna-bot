@@ -1,10 +1,18 @@
 {
+  "en": "en",
   "male": "m",
   "female": "f",
+  "homosexual": "o",
+  "heterosexual": "e",
+  "bisexual": "b",
   "student card": "card",
   "university email address": "email",
+  "tr": "tr",
   "erkek": "m",
   "kadın": "f",
+  "homoseksüel": "o",
+  "heteroseksüel": "e",
+  "biseksüel": "b",
   "öğrenci kartı": "card",
   "üniversite e-mail adresi": "email"
 }

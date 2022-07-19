@@ -44,7 +44,7 @@ class UsersDB:
 		CREATE TABLE IF NOT EXISTS users(
 			id INTEGER,
 			name TEXT,
-			age INTEGER,
+			age VARCHAR(10),
 			university TEXT,
 			gender VARCHAR(1),
 			bio TEXT,
@@ -78,7 +78,7 @@ class UsersDB:
 		);
 		CREATE TABLE IF NOT EXISTS errors (
 			user_id INTEGER,
-			error INTEGER,
+			error TEXT,
 			date TEXT
 		);"""
 		self.cur.executescript(stmt)
@@ -90,7 +90,7 @@ class UsersDB:
 		args = (
 			user_id,
 			'',
-			0,
+			'',
 			'',
 			'',
 			'',
@@ -125,13 +125,13 @@ class UsersDB:
 		self.cur.execute(stmt, args)
 		self.con.commit()
 
-	def add_age(self, user_id: int, age: int) -> None:
+	def add_age(self, user_id: int, age: str) -> None:
 		stmt = "UPDATE users SET age = ?, profile_step = 3 WHERE id = ?;"
 		args = (age, user_id)
 		self.cur.execute(stmt, args)
 		self.con.commit()
 
-	def add_university(self, user_id: int, university: int) -> None:
+	def add_university(self, user_id: int, university: str) -> None:
 		stmt = "UPDATE users SET university = ? WHERE id = ?;"
 		args = (university, user_id)
 		self.cur.execute(stmt, args)
@@ -174,17 +174,32 @@ class UsersDB:
 		self.cur.execute(stmt, args)
 		self.con.commit()
 
+	def check_verify_code(self, user_id: int, code: str) -> bool:
+		stmt = "SELECT EXISTS(SELECT 1 FROM users WHERE id = ? AND verify_code = ?);"
+		args = (user_id, code)
+		self.cur.execute(stmt, args)
+		return self.cur.fetchone() == (1,)
+
 	def add_verify_code(self, user_id: int, code: str) -> None:
 		stmt = "UPDATE users SET verify_code = ?, profile_step = 8 WHERE id = ?;"
 		args = (code, user_id)
 		self.cur.execute(stmt, args)
 		self.con.commit()
 
-	def check_verify_code(self, user_id: int, code: str) -> bool:
-		stmt = "SELECT EXISTS(SELECT 1 FROM users WHERE id = ? AND verify_code = ?);"
-		args = (user_id, code)
-		self.cur.execute(stmt, args)
-		return self.cur.fetchone() == (1,)
+	def add_test_user(
+			self, user_id: int, name: str, university: str, gender: str, so: str,
+			media_type: str, is_profile_complete: int
+	) -> None:
+
+		self.add_initial(user_id)
+		self.add_name(user_id, name)
+		self.add_university(user_id, university)
+		self.add_gender(user_id, gender)
+		self.add_so(user_id, so)
+		self.add_media(user_id, media_type)
+
+		if is_profile_complete:
+			self.mark_profile_as_completed(user_id)
 
 	def change_profile_step(self, user_id: int, profile_step: int) -> None:
 		stmt = "UPDATE users SET profile_step = ? WHERE id = ?;"
@@ -220,12 +235,6 @@ class UsersDB:
 		args = ()
 		self.cur.execute(stmt, args)
 		return self.cur.fetchmany()
-
-	def delete_user(self, user_id: int) -> None:
-		stmt = "DELETE FROM users WHERE id = ?;"
-		args = (user_id,)
-		self.cur.execute(stmt, args)
-		self.con.commit()
 
 	# pending matches functions
 	def add_pending_match(self, user1: int, user2: int) -> None:
@@ -316,7 +325,7 @@ class UsersDB:
 				FROM matches
 				WHERE user2 = ?
 			)
-			AND id != ?
+			AND id != ? AND is_profile_complete = 1
 			OR id IN (
 				SELECT user1
 				FROM matches
@@ -348,14 +357,14 @@ class UsersDB:
 		self.con.commit()
 
 	# errors functions
-	def add_error(self, user_id: int, error_code: int) -> None:
+	def add_error(self, user_id: int, error_details: str) -> None:
 		"""
 		1. name error with '!'
 		"""
 		stmt = "INSERT INTO errors VALUES (?, ?, ?);"
 		args = (
 			user_id,
-			error_code,
+			error_details,
 			datetime.now().strftime(date_time_format)
 		)
 		self.cur.execute(stmt, args)
@@ -364,6 +373,12 @@ class UsersDB:
 	def edit_user_attr(self, user_id: int, attr: str, v: str or int) -> None:
 		stmt = f"UPDATE users SET {attr} = ? WHERE id = ?;"
 		args = (v, user_id)
+		self.cur.execute(stmt, args)
+		self.con.commit()
+
+	def delete_user(self, user_id):
+		stmt = "DELETE FROM users WHERE id = ?;"
+		args = (user_id,)
 		self.cur.execute(stmt, args)
 		self.con.commit()
 

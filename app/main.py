@@ -1,4 +1,5 @@
 import string
+from datetime import datetime
 from functools import wraps
 
 from telegram import Update
@@ -10,16 +11,16 @@ from telegram.parsemode import ParseMode
 import os
 import re
 
-from app.domains import domains
+from domains import domains
 
 import random
 
-from app.email_protocol import send_email
+from email_protocol import send_email
 from ashna_secrets import API_KEY, VERIFY_PASS, LIST_OF_ADMINS
 
 from translations import translate, detranslate
 
-from app.names import check_name
+from names import check_name
 
 from telegram import KeyboardButton, ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup
 from users import UsersDB
@@ -36,7 +37,8 @@ media_path = f"{str(Path(__file__).parent.parent.absolute())}/profile-medias"
 
 # lists
 genders = 'male', 'female'
-verify_methods = 'student card', 'university email address'
+sos = 'homosexual', 'heterosexual', 'bisexual'
+verify_methods = 'student_card', 'university_email_address'
 steps = 'lang', 'name', 'age', 'gender', 'bio', 'last_saved_media_name',
 steps_zip = list(enumerate(steps, start=0))
 
@@ -114,6 +116,10 @@ def gender_keyboard(lan: str) -> list:
 	return [[KeyboardButton(translate(g, lan)) for g in genders]]
 
 
+def so_keyboard(lan: str) -> list:
+	return [[KeyboardButton(translate(so_, lan)) for so_ in sos]]
+
+
 def skip_keyboard(lan: str) -> list:
 	return [[KeyboardButton(translate('skip', lan))]]
 
@@ -124,10 +130,6 @@ def verify_method_keyboard(lan: str) -> list:
 
 def change_verify_method_keyboard(lan: str) -> list:
 	return [[KeyboardButton(translate('change_vm', lan))]]
-
-
-def edit_menu_keyboard(lan: str) -> list:
-	return [[KeyboardButton]]  # TODO
 
 
 # markups
@@ -150,9 +152,28 @@ language_reply_markup = ReplyKeyboardMarkup(
 )
 
 
+def edit_reply_markup(lan: str, choice: int):
+	if choice == 1:
+		return gender_reply_markup(lan)
+	elif choice == 2:
+		return skip_reply_markup(lan)
+	elif choice == 3:
+		return so_reply_markup(lan)
+	elif choice == 4:
+		return language_reply_markup
+	return None
+
+
 def gender_reply_markup(lan: str):
 	return ReplyKeyboardMarkup(
 		gender_keyboard(lan),
+		one_time_keyboard=True,
+		resize_keyboard=True)
+
+
+def so_reply_markup(lan: str):
+	return ReplyKeyboardMarkup(
+		so_keyboard(lan),
 		one_time_keyboard=True,
 		resize_keyboard=True)
 
@@ -198,12 +219,17 @@ rps_inline_markup = InlineKeyboardMarkup(
 WAITING, TIMEOUT, DONE = range(-3, 0)
 
 (CHOOSING_EDIT,
- EDITING_NAME,
- EDITING_AGE,
- EDITING_MEDIA) = range(4)
+ EDITING_GENDER,
+ EDITING_BIO,
+ EDITING_SO,
+ EDITING_LANGUAGE,
+ EDITING_MEDIA) = range(6)
 
 SWIPING, COMPLAINING = range(2)
 
+DECISION, = range(1)
+
+"""
 profile_steps = {
 	0: "language",
 	1: "name",
@@ -216,6 +242,15 @@ profile_steps = {
 	8: "email address",
 	9: "special code",
 	10: "complete"
+}
+"""
+
+edit_options = {
+	1: "gender",
+	2: "bio",
+	3: "so",
+	4: "language",
+	5: "media"
 }
 
 
@@ -654,7 +689,8 @@ def choose_edit(update: Update, context: CallbackContext) -> int:
 
 	try:
 		input_user_edit_choice = int(update.effective_message.text)
-		if input_user_edit_choice > 4 or input_user_edit_choice < 1:
+		print(1)
+		if not (0 < input_user_edit_choice <= len(edit_options)):
 			raise ValueError
 	except (ValueError, TypeError):
 		update.effective_message.reply_text(
@@ -663,60 +699,82 @@ def choose_edit(update: Update, context: CallbackContext) -> int:
 
 	update.effective_message.reply_text(
 		text=translate("send_your_thing", user_dict["lang"]).format(
-			profile_steps[input_user_edit_choice - 1]))
+			edit_options[input_user_edit_choice]),
+		reply_markup=edit_reply_markup(user_dict["lang"], input_user_edit_choice))
 	return input_user_edit_choice
 
 
-def name_edit(update: Update, context: CallbackContext) -> int:
+def gender_edit(update: Update, context: CallbackContext) -> int:
 	user_id = update.effective_user.id
 	user_dict = users_db.get_user(user_id)
 
-	result = name(update, context)
+	result = gender(update, context)
 
 	if result == 1:
-		update.effective_message.reply_text(text=translate(
-			"main_menu", user_dict["lang"]))
 		return cancel(update, context)
 
 	elif result == 0:
 		update.effective_message.reply_text(
-			text=translate("name_warning", user_dict["lang"]))
+			text=translate("gender_warning", user_dict["lang"]))
 		update.effective_message.reply_text(
-			text=translate("send_name_c", user_dict["lang"]))
-		return EDITING_NAME
-
-	elif result == -1:
-		update.effective_message.reply_text(
-			text=translate("send_name_but", user_dict["lang"]))
-		update.effective_message.reply_text(
-			text=translate("send_name_c", user_dict["lang"]))
-		return EDITING_NAME
+			text=translate("send_gender_c", user_dict["lang"]))
+		return EDITING_GENDER
 
 
-def age_edit(update: Update, context: CallbackContext) -> int:
+def bio_edit(update: Update, context: CallbackContext) -> int:
 	user_id = update.effective_user.id
 	user_dict = users_db.get_user(user_id)
 
-	result = age(update, context)
+	result = bio(update, context)
 
 	if result == 1:
-		update.effective_message.reply_text(text=translate(
-			"main_menu", user_dict["lang"]))
+		profile(update, context)
 		return cancel(update, context)
 
 	elif result == 0:
 		update.effective_message.reply_text(
-			text=translate("age_warning", user_dict["lang"]))
-		update.effective_message.reply_text(
-			text=translate("send_age_c", user_dict["lang"]))
-		return EDITING_AGE
+			text=translate("bio_skipped", user_dict["lang"]))
+		profile(update, context)
+		return cancel(update, context)
 
 	elif result == -1:
 		update.effective_message.reply_text(
-			text=translate("send_age_but", user_dict["lang"]))
+			text=translate("bio_warning", user_dict["lang"]))
 		update.effective_message.reply_text(
-			text=translate("send_age_c", user_dict["lang"]))
-		return EDITING_AGE
+			text=translate("send_bio_c", user_dict["lang"]))
+		return EDITING_BIO
+
+
+def so_edit(update: Update, context: CallbackContext) -> int:
+	user_id = update.effective_user.id
+	user_dict = users_db.get_user(user_id)
+
+	result = so(update, context)
+
+	if result == 1:
+		return cancel(update, context)
+	elif result == 0:
+		update.effective_message.reply_text(
+			text=translate("so_warning", user_dict["lang"]))
+		update.effective_message.reply_text(
+			text=translate("send_so_c", user_dict["lang"]))
+		return EDITING_SO
+
+
+def language_edit(update: Update, context: CallbackContext) -> int:
+	user_id = update.effective_user.id
+	user_dict = users_db.get_user(user_id)
+
+	result = lang(update, context)
+
+	if result == 1:
+		return cancel(update, context)
+	elif result == 0:
+		update.effective_message.reply_text(text=translate(
+			"lang_warning", user_dict["lang"]))
+		update.effective_message.reply_text(text=translate(
+			"send_lang_c", user_dict["lang"]))
+		return EDITING_LANGUAGE
 
 
 def media_edit(update: Update, context: CallbackContext) -> int:
@@ -726,8 +784,7 @@ def media_edit(update: Update, context: CallbackContext) -> int:
 	result = media(update, context)
 
 	if result == 1:
-		update.effective_message.reply_text(text=translate(
-			"main_menu", user_dict["lang"]))
+		profile(update, context)
 		return cancel(update, context)
 
 	elif result == 0:
@@ -753,39 +810,51 @@ def lang(update: Update, context: CallbackContext) -> int:
 
 def name(update: Update, context: CallbackContext) -> int:
 	user_id = update.effective_user.id
-	input_name = update.effective_message.text
 
 	try:
-		input_name.upper()
+		input_name = update.effective_message.text.strip().replace('İ', 'i').replace('I', 'ı').lower()
 	except AttributeError:
 		return -1
 
 	# check if the first character of input_name is '!' and others are alpha characters
-	if input_name[:-1].isalpha():
-		if check_name(input_name.upper()):
-			users_db.add_name(user_id, input_name.strip())
+	if input_name[:-1].isalpha() and 2 <= len(input_name.strip('!')) <= 20:
+		if check_name(input_name):
+			users_db.add_name(user_id, input_name)
 			return 1
 		elif input_name[-1] == '!':
-			users_db.add_error(user_id, 1)
-			users_db.add_name(user_id, input_name.strip('!').strip())
+			users_db.add_name(user_id, input_name.strip('!'))
+			users_db.add_error(user_id, "name_warning")
 			return 1
 		return 0
 	return -1
 
 
-def age(update: Update, context: CallbackContext) -> int:
-	user_id = update.effective_user.id
-
+def calculate_age(birthday_str: str) -> int:
 	try:
-		input_age = int(update.effective_message.text)
+		birthday_dt = datetime.strptime(birthday_str, '%d.%m.%Y')
 	except (ValueError, TypeError):
 		return -1
+	today = datetime.now()
+	return today.year - birthday_dt.year - ((today.month, today.day) < (birthday_dt.month, birthday_dt.day))
 
-	if 29 >= input_age >= 18:
-		users_db.add_age(user_id, input_age)
+
+def age(update: Update, context: CallbackContext) -> int:
+	user_id = update.effective_user.id
+	input_birthday = update.effective_message.text
+
+	# DD.MM.YYYY
+	# calculate age from input_birthday
+	# if user is born in the future, return -1
+	# if user is older than 18 years and younger than 30 years, return 1
+	# else return -1
+
+	user_age = calculate_age(input_birthday)
+
+	if 18 <= user_age <= 29:
+		users_db.add_age(user_id, input_birthday)
 		return 1
 
-	return 0
+	return -1 if user_age == -1 else 0
 
 
 def gender(update: Update, context: CallbackContext) -> int:
@@ -917,10 +986,43 @@ def so(update: Update, context: CallbackContext) -> int:
 	user_id = update.effective_user.id
 	so_input = update.effective_message.text
 
-	if so_input in ['e', 'o', 'b']:
-		users_db.add_so(user_id, so_input)
+	user_so = detranslate(so_input)
+
+	if user_so in ['e', 'o', 'b']:
+		users_db.add_so(user_id, user_so)
 		return 1
 	return 0
+
+
+def delete_profile_decision(update: Update, context: CallbackContext) -> int:
+	user_id = update.effective_user.id
+	user_dict = users_db.get_user(user_id)
+
+	update.effective_message.reply_text(
+		text=translate("r_u_sure_delete_profile", user_dict["lang"]),
+		reply_markup=ok_nah_reply_markup,
+	)
+
+	return DECISION
+
+
+def delete_profile(update: Update, context: CallbackContext) -> int:
+	user_id = update.effective_user.id
+	user_dict = users_db.get_user(user_id)
+
+	input_decision = update.effective_message.text
+
+	if input_decision == "OK 👍":
+		users_db.delete_user(user_id)
+		update.effective_message.reply_text(
+			text=translate("profile_deleted", user_dict["lang"])
+		)
+		return DONE
+
+	update.effective_message.reply_text(
+		text=translate("profile_delete_cancelled", user_dict["lang"])
+	)
+	return cancel(update, context)
 
 
 def help_(update: Update, context: CallbackContext) -> None:
@@ -1104,8 +1206,7 @@ def complain(update: Update, context: CallbackContext) -> int:
 	users_db.add_match(user_id, user_id_2, 0)
 	users_db.add_match(user_id_2, user_id, 0)
 	update.effective_message.reply_text(
-		text=translate("continue_swipe",
-					   user_dict["lang"]),
+		text=translate("continue_swipe", user_dict["lang"]),
 		reply_markup=ok_nah_reply_markup)
 	return SWIPING
 
@@ -1136,16 +1237,18 @@ def profile(update: Update, context: CallbackContext) -> None:
 	if user_dict["media_type"] == 'jpg':
 		update.effective_message.reply_photo(
 			photo=media_bytes,
-			caption=f"""{user_name}, {user_dict["age"]}, {user_university}\n{'😁💬:'}{user_dict["bio"]}"""
+			caption=f"""{user_name}, {calculate_age(user_dict["age"])}, {user_university}\n{'😁💬:'}{user_dict["bio"]
+			if not user_dict["bio"] == "no_bio" else translate("no_bio", user_dict["lang"])}""",
 		)
 	elif user_dict["media_type"] == 'mp4':
 		update.effective_message.reply_video(
 			video=media_bytes,
-			caption=f"""{user_name}, {user_dict["age"]}, {user_university}\n{'😁💬:'}{user_dict["bio"]}"""
+			caption=f"""{user_name}, {calculate_age(user_dict["age"])}, {user_university}\n{'😁💬: '}{user_dict["bio"]
+			if not user_dict["bio"] == "no_bio" else translate("no_bio", user_dict["lang"])}""",
 		)
 	else:
 		update.effective_message.reply_text(
-			text=f"error_report_this_2_admin"
+			text="error_report_this_2_admin"
 		)
 
 
@@ -1164,18 +1267,18 @@ def send_swipe_profile(update: Update, swipe_user_id: int) -> None:
 	if user_dict["media_type"] == 'jpg':
 		update.effective_message.reply_photo(
 			photo=media_bytes,
-			caption=f"""{user_name}, {user_dict["age"]}, {user_university}\n:{'😁💬:'}{user_dict["bio"]}""",
+			caption=f"""{user_name}, {calculate_age(user_dict["age"])}, {user_university}\n:{'😁💬:'}{user_dict["bio"]}""",
 			reply_markup=decision_reply_markup
 		)
 	elif user_dict["media_type"] == 'mp4':
 		update.effective_message.reply_video(
 			video=media_bytes,
-			caption=f"""{user_name}, {user_dict["age"]}, {user_university}\n:{'😁💬:'}{user_dict["bio"]}""",
+			caption=f"""{user_name}, {calculate_age(user_dict["age"])}, {user_university}\n:{'😁💬:'}{user_dict["bio"]}""",
 			reply_markup=decision_reply_markup
 		)
 	else:
 		update.effective_message.reply_text(
-			text=f"error_report_this_2_admin"
+			text="error_report_this_2_admin"
 		)
 
 
@@ -1258,6 +1361,7 @@ def main():
 	about_handler = CommandHandler('about', about)
 	profile_handler = CommandHandler('profile', profile)
 	edit_profile_handler = CommandHandler('edit', edit_profile)
+	delete_profile_handler = CommandHandler('delete', delete_profile_decision)
 	cancel_handler = CommandHandler('cancel', cancel)
 
 	# swipe conv entry
@@ -1349,14 +1453,24 @@ def main():
 					Filters.text & (~Filters.command), choose_edit
 				)
 			],
-			EDITING_NAME: [
+			EDITING_GENDER: [
 				MessageHandler(
-					Filters.text & (~Filters.command), name_edit
+					Filters.text & (~Filters.command), gender_edit
 				)
 			],
-			EDITING_AGE: [
+			EDITING_BIO: [
 				MessageHandler(
-					Filters.text & (~Filters.command), age_edit
+					Filters.text & (~Filters.command), bio_edit
+				)
+			],
+			EDITING_SO: [
+				MessageHandler(
+					Filters.text & (~Filters.command), so_edit
+				)
+			],
+			EDITING_LANGUAGE: [
+				MessageHandler(
+					Filters.text & (~Filters.command), language_edit
 				)
 			],
 			EDITING_MEDIA: [
@@ -1394,6 +1508,21 @@ def main():
 		]
 	)
 
+	delete_profile_conv_handler = ConversationHandler(
+		entry_points=[delete_profile_handler],
+		states={
+			DECISION: [
+				MessageHandler(
+					Filters.text & (~Filters.command), delete_profile
+				)
+			]
+		}, fallbacks=[
+			help_handler,
+			about_handler,
+			cancel_handler,
+		]
+	)
+
 	handlers = [
 		verify_user_handler,
 		set_user_attrs_handler,
@@ -1401,8 +1530,7 @@ def main():
 		swipe_conv_handler,
 		edit_profile_conv_handler,
 		profile_handler,
-		help_handler,
-		about_handler,
+		delete_profile_conv_handler,
 		create_profile_conv_handler,
 		unknown_handler,
 	]

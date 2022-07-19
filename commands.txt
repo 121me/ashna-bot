@@ -1,0 +1,8 @@
+start - Profil oluştur / Create profile
+swipe - Eşleş / Match
+profile - Profilini görüntüle / View profile
+edit - Profilini düzenle / Edit profile
+cancel - İşlemi iptal et / Cancel operation
+help - Yardım
+about - Hakkında
+delete - Profilini sil / Delete profile
