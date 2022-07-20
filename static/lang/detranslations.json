@@ -7,6 +7,11 @@
   "bisexual": "b",
   "student card": "card",
   "university email address": "email",
+  "gender": "gender",
+  "bio": "bio",
+  "sexual orientation": "so",
+  "language": "language",
+  "media": "media",
   "tr": "tr",
   "erkek": "m",
   "kadın": "f",
@@ -14,5 +19,10 @@
   "heteroseksüel": "e",
   "biseksüel": "b",
   "öğrenci kartı": "card",
-  "üniversite e-mail adresi": "email"
+  "üniversite e-mail adresi": "email",
+  "cinsiyet": "gender",
+  "biyo": "bio",
+  "so": "sexual orientation",
+  "dil": "language",
+  "media:": "media"
 }

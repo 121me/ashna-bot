@@ -295,16 +295,16 @@ class UsersDB:
 		elif gender == 'f':
 			g = 'f', 'm'
 		else:
-			g = 'm', 'f'
+			return None
 
 		if so == 'o':
-			gso = '{0}o|{0}b'
+			gso = '{0}o|{0}b|{1}b'
 		elif so == 'e':
 			gso = '{1}e|{1}b'
 		elif so == 'b':
 			gso = '{0}o|{1}e|{0}b|{1}b'
 		else:
-			gso = '{0}o|{1}e|{0}b|{1}b'
+			return None
 
 		gso = gso.format(*g)
 

@@ -5,6 +5,7 @@
   "age": "age",
   "gender": "gender",
   "bio": "bio",
+  "so": "sexual orientation",
   "media": "media",
   "email_address": "email address",
   "verification_code": "verification code",
@@ -55,7 +56,7 @@
   "unknown": "Hey hey hey, you just sent something that I don't even know what to do with that. Type /help for more help if you are lost",
   "about": "    Ashna Bot\n2021-..\nMelih Aksoy\n\nIt is a self-made project to practise coding, look at what I have done)))\n\nemail : 125melih125@gmail.com\ngithub : <a href='https://www.github.com/121me'>121me</a>\ninsta : <a href='https://www.instagram.com/pardonmyturkish'>pardonmyturkish</a>\nvk : <a href='https://www.vk.com/pardonmyturkish'>pardonmyturkish</a>\n",
   "swipe_warning": "Reminder!\nKeep it in mind that there might be people impersonating someone else!\nProtect your privacy and DO NOT share any important personal information!",
-  "match_notification": "MATCH!!! Start talking with <a href='tg://user?id={}>{}</a>'",
+  "match_notification": "MATCH!!! Start talking with <a href=\"tg://user?id={}\">{}</a>",
   "continue_swipe": "Do you want to continue swiping?",
   "no_user": "There is no user out there for matching yet \uD83C\uDFDC️, check later again",
   "complain_menu": "🎭 Impersonating someone / fake\n💸 Asking for money\n🔞 Adult material in profile\n🔙 Go back"

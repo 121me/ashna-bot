@@ -5,6 +5,7 @@
   "age": "yaş",
   "gender": "cinsiyet",
   "bio": "biyo",
+  "so": "cinsel yönelim",
   "media": "medya",
   "email_address": "e-posta adresi",
   "verification_code": "doğrulama kodu",
@@ -55,7 +56,7 @@
   "unknown": "Hey hey hey, bununla ne yapacağımı bilmediğim bir şey gönderdin. Kaybolduysan daha fazla yardım için /help yaz",
   "about": " Ashna Bot\n2021-..\nMelih Aksoy\n\nKodlama pratiği yapmak için kendi yaptığım bir proje idi, bakın ne yaptım)))\n\nemail : 125melih125@gmail.com\ngithub : <a href='https://www.github.com/121me'>121me</a>\ninsta : <a href='https://www.instagram.com/pardonmyturkish'>pardonmyturkish</a> \nvk : <a href='https://www.vk.com/pardonmyturkish'>pardonmyturkish</a>\n",
   "swipe_warning": "Hatırlatıcı!\nBaşka birinin kimliğine bürünen kişilerin olabileceğini unutmayın!\nGizliliğinizi koruyun ve önemli kişisel bilgilerinizi PAYLAŞMAYIN!",
-  "match_notification": "MATCH!!! <a href='tg://user?id={}>{}</a>' ile konuşmaya başlayın",
+  "match_notification": "MATCH!!! <a href=\"tg://user?id={}\">{}</a> ile konuşmaya başlayın",
   "continue_swipe": "Kaydırma işlemine devam etmek istiyor musunuz?",
   "no_user": "Henüz eşleştirilecek kullanıcı yok \uD83C\uDFDC️, daha sonra tekrar kontrol edin",
   "complain_menu": "🎭 Birinin kimliğine bürünme / sahte\n💸 Para isteme\n🔞 Profilde yetişkinlere uygun materyal\n🔙 Geri dön"

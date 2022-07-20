@@ -72,6 +72,14 @@ flag_and_language = {
 	"🇬🇧": "en"
 }
 
+edit_options = {
+	"gender": 1,
+	"bio": 2,
+	"so": 3,
+	"language": 4,
+	"media": 5
+}
+
 # keyboards
 decision_keyboard = [
 	[
@@ -110,6 +118,13 @@ def big_keyboard_maker(kb: list) -> list:
 	for b in kb:  # TODO REMEMBER, list[list[KeyboardButton]]
 		pass
 	return []
+
+
+def edit_menu_keyboard(lan: str) -> list:
+	vs = list(edit_options.keys())
+	return [[KeyboardButton(translate(v, lan)) for v in vs[:2]],
+			[KeyboardButton(translate(vs[2], lan))],
+			[KeyboardButton(translate(v, lan)) for v in vs[3:]]]
 
 
 def gender_keyboard(lan: str) -> list:
@@ -162,6 +177,13 @@ def edit_reply_markup(lan: str, choice: int):
 	elif choice == 4:
 		return language_reply_markup
 	return None
+
+
+def edit_menu_reply_markup(lan: str):
+	return ReplyKeyboardMarkup(
+		edit_menu_keyboard(lan),
+		one_time_keyboard=True,
+		resize_keyboard=True)
 
 
 def gender_reply_markup(lan: str):
@@ -244,14 +266,6 @@ profile_steps = {
 	10: "complete"
 }
 """
-
-edit_options = {
-	1: "gender",
-	2: "bio",
-	3: "so",
-	4: "language",
-	5: "media"
-}
 
 
 def restricted(func):
@@ -674,7 +688,8 @@ def edit_profile(update: Update, context: CallbackContext) -> int:
 
 	if user_dict["is_profile_complete"]:
 		update.effective_message.reply_text(
-			text=translate("edit_menu", user_dict["lang"]))
+			text=translate("edit_menu", user_dict["lang"]),
+			reply_markup=edit_menu_reply_markup(user_dict["lang"]))
 		return CHOOSING_EDIT
 
 	update.effective_message.reply_text(
@@ -688,20 +703,23 @@ def choose_edit(update: Update, context: CallbackContext) -> int:
 	user_dict = users_db.get_user(user_id)
 
 	try:
-		input_user_edit_choice = int(update.effective_message.text)
-		print(1)
-		if not (0 < input_user_edit_choice <= len(edit_options)):
+		user_input = update.effective_message.text
+
+		if (input_user_edit_choice := detranslate(user_input)) in edit_options.keys():
+			print(input_user_edit_choice)
+			choice_state = edit_options[input_user_edit_choice]
+		else:
 			raise ValueError
+
 	except (ValueError, TypeError):
 		update.effective_message.reply_text(
 			text=translate("send_valid", user_dict["lang"]))
 		return CHOOSING_EDIT
 
 	update.effective_message.reply_text(
-		text=translate("send_your_thing", user_dict["lang"]).format(
-			edit_options[input_user_edit_choice]),
-		reply_markup=edit_reply_markup(user_dict["lang"], input_user_edit_choice))
-	return input_user_edit_choice
+		text=translate("send_your_thing", user_dict["lang"]).format(user_input),
+		reply_markup=edit_reply_markup(user_dict["lang"], choice_state))
+	return choice_state
 
 
 def gender_edit(update: Update, context: CallbackContext) -> int:
@@ -1318,6 +1336,12 @@ def verify_user(update: Update, context: CallbackContext) -> None:
 
 	for user_id in user_ids:
 		user_dict = users_db.get_user(user_id)
+
+		if not user_dict:
+			update.effective_message.reply_text(
+				text=f"User {user_id} not found")
+			continue
+
 		lan = user_dict['lang']
 
 		users_db.mark_profile_as_completed(user_id)
@@ -1329,9 +1353,7 @@ def verify_user(update: Update, context: CallbackContext) -> None:
 		update.effective_message.reply_text(
 			text=translate("main_menu", lan))
 
-	# users_db.change_profile_step(user_id, COMPLETE)
-
-	update.effective_message.reply_text(text=f"{', '.join(map(str, user_ids))} marked as completed")  # map to list?
+		update.effective_message.reply_text(text=f"{user_id} marked as completed")  # map to list?
 
 
 @restricted
