@@ -58,7 +58,7 @@
   "send_valid": "Lütfen geçerli bir seçenek gönderin veya iptal edin /cancel :",
   "unknown": "Hey hey hey, bununla ne yapacağımı bilmediğim bir şey gönderdin. Kaybolduysan daha fazla yardım için /help yaz",
   "about": " Ashna Bot\n2021-..\nMelih Aksoy\n\nKodlama pratiği yapmak için kendi yaptığım bir proje idi, bakın ne yaptım)))\n\nemail : 125melih125@gmail.com\ngithub : <a href='https://www.github.com/121me'>121me</a>\ninsta : <a href='https://www.instagram.com/pardonmyturkish'>pardonmyturkish</a> \nvk : <a href='https://www.vk.com/pardonmyturkish'>pardonmyturkish</a>\ntelegram : <a href='https://t.me/MelihAksoy'>MelihAksoy</a>",
-  "help": "Eğer takıldıysan /cancel yazıp /start yazman yeterli. Eğer bu sorununu çözmezse /about yazıp benimle iletişime geç.",
+  "help": "Eğer takıldıysan /cancel yazıp /start yazman yeterli veya botu yukarıdaki ayarlardan durdur ve baştan başlat. Eğer bu sorununu çözmezse /about yazıp benimle iletişime geç.",
   "swipe_warning": "Hatırlatıcı!\nBaşka birinin kimliğine bürünen kişilerin olabileceğini unutmayın!\nGizliliğinizi koruyun ve önemli kişisel bilgilerinizi PAYLAŞMAYIN!",
   "match_notification": "MATCH!!! <a href=\"tg://user?id={}\">{}</a> ile konuşmaya başlayın",
   "continue_swipe": "Kaydırma işlemine devam etmek istiyor musunuz?",
