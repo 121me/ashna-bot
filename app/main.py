@@ -1067,7 +1067,7 @@ def help_(update: Update, context: CallbackContext) -> None:
 	user_dict = users_db.get_user(user_id)
 
 	update.effective_message.reply_text(
-		text=translate("help_command", user_dict["lang"]))
+		text=translate("help", user_dict["lang"]))
 	"""
 	if not user_dict[-1]:
 		user_lost(update, context)
