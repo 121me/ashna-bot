@@ -1289,6 +1289,48 @@ def profile(update: Update, context: CallbackContext) -> None:
 		)
 
 
+def send_profile(user_id: int, context: CallbackContext) -> None:
+	user_dict = users_db.get_user(user_id)
+
+	if not user_dict["is_profile_complete"]:
+		context.dispatcher.bot.send_message(
+			chat_id=user_id,
+			text=translate("no_profile_no_command", user_dict["lang"]),
+		)
+		return DONE
+
+	user_media_path = f"""{media_path}/{user_id}/{user_dict["last_saved_media_name"]}.{user_dict["media_type"]}"""
+
+	with open(file=user_media_path, mode="rb") as file:
+		media_bytes = file.read()
+
+	user_name, user_university = user_dict["name"].title(), user_dict["university"].title()
+
+	print("hey", user_university, "hey")
+
+	print(user_dict["media_type"])
+
+	if user_dict["media_type"] == 'jpg':
+		context.dispatcher.bot.send_photo(
+			chat_id=user_id,
+			photo=media_bytes,
+			caption=f"""{user_name}, {calculate_age(user_dict["age"])}, {user_university}\n{'😁💬:'}{user_dict["bio"]
+			if not user_dict["bio"] == "no_bio" else translate("no_bio", user_dict["lang"])}""",
+		)
+	elif user_dict["media_type"] == 'mp4':
+		context.dispatcher.bot.send_video(
+			chat_id=user_id,
+			video=media_bytes,
+			caption=f"""{user_name}, {calculate_age(user_dict["age"])}, {user_university}\n{'😁💬: '}{user_dict["bio"]
+			if not user_dict["bio"] == "no_bio" else translate("no_bio", user_dict["lang"])}""",
+		)
+	else:
+		context.dispatcher.bot.send_message(
+			chat_id=user_id,
+			text="error_report_this_2_admin"
+		)
+
+
 def send_swipe_profile(update: Update, swipe_user_id: int) -> None:
 	user_dict = users_db.get_user(swipe_user_id)
 
@@ -1368,7 +1410,7 @@ def verify_user(update: Update, context: CallbackContext) -> None:
 		context.dispatcher.bot.send_message(
 			chat_id=user_id,
 			text=translate('profile_completed', lan))
-		profile(update, context)
+		send_profile(user_id, context)
 		update.effective_message.reply_text(
 			text=translate("main_menu", lan))
 
