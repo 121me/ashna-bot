@@ -688,6 +688,9 @@ def rps_game(update: Update, context: CallbackContext) -> int:
 		text=text.format(rps_emojis[user_input], rps_emojis[bot_input]),
 		reply_markup=None
 	)
+	if user_dict["is_profile_complete"]:
+		profile(update, context)
+		return cancel(update, context)
 	context.dispatcher.bot.send_message(
 		chat_id=user_id,
 		text=translate("rps_again", user_dict["lang"]),
