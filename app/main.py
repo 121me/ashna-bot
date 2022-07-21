@@ -1618,6 +1618,8 @@ def main():
 		profile_handler,
 		delete_profile_conv_handler,
 		create_profile_conv_handler,
+		help_handler,
+		about_handler,
 		unknown_handler,
 	]
 	# we add all handlers here
