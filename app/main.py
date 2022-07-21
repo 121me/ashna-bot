@@ -85,7 +85,7 @@ decision_keyboard = [
 	[
 		KeyboardButton("❤️"),
 		KeyboardButton("👎"),
-		KeyboardButton("⛔"),
+		# KeyboardButton("⛔"), TODO ADD LATER
 		KeyboardButton("🚪")
 	]
 ]
@@ -613,7 +613,7 @@ def email_address_choice(update: Update, context: CallbackContext) -> int:
 
 	if result == 1:
 		update.effective_message.reply_text(
-			text=translate("send_verify_code", user_dict["lang"]))
+			text=translate("send_verification_code", user_dict["lang"]))
 		# create a verification code with 6 integers
 		# save the verification code in the database
 		# send verification code to user's email address
@@ -625,7 +625,21 @@ def email_address_choice(update: Update, context: CallbackContext) -> int:
 
 	elif result == 0:
 		update.effective_message.reply_text(
-			text=translate("email_address_warning", user_dict["lang"]))
+			text=translate("university_not_in_list", user_dict["lang"]).format(", ".join(domains.keys())))
+		update.effective_message.reply_text(
+			text=translate("send_verification_code", user_dict["lang"]))
+		# create a verification code with 6 integers
+		# save the verification code in the database
+		# send verification code to user's email address
+		user_dict = users_db.get_user(user_id)
+		verify_code_ = ''.join(random.choices(string.digits, k=6))
+		users_db.add_verify_code(user_id, verify_code_)
+		send_email(user_dict["email_address"], verify_code_)
+		return TYPING_VERIFY_CODE
+
+	elif result == -1:
+		update.effective_message.reply_text(
+			text=translate("email_address_warning", user_dict["lang"]).format(", ".join(domains.keys())))
 		update.effective_message.reply_text(
 			text=translate("send_email_address", user_dict["lang"]))
 		return TYPING_EMAIL_ADDRESS
@@ -647,7 +661,7 @@ def verify_code_choice(update: Update, context: CallbackContext) -> int:
 		update.effective_message.reply_text(
 			text=translate("verify_code_warning", user_dict["lang"]))
 		update.effective_message.reply_text(
-			text=translate("send_verify_code", user_dict["lang"]))
+			text=translate("send_verification_code", user_dict["lang"]))
 		return TYPING_VERIFY_CODE
 
 
@@ -976,18 +990,23 @@ def email_address(update: Update, context: CallbackContext) -> int:
 	user_id = update.effective_user.id
 	email_address_input = update.effective_message.text
 
-	if re.search(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+', email_address_input) \
-			and not users_db.check_email_address(email_address_input):
+	if re.search(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+', email_address_input)\
+and not users_db.check_email_address(email_address_input):
+
 		_, domain = email_address_input.split('@')
+		if "edu.tr" not in domain:
+			return -1
 		try:
 			users_db.add_university(user_id, domains[domain])
+			users_db.add_email_address(user_id, email_address_input)
+			users_db.change_profile_step(user_id, TYPING_VERIFY_CODE)
+			return 1
 		except KeyError:
-			return 0  # TODO add for wait list for users from other uni that are not in domains.py
-
-		users_db.add_email_address(user_id, email_address_input)
-		users_db.change_profile_step(user_id, TYPING_VERIFY_CODE)
-		return 1
-	return 0  # TODO change to -1 later after done with todo above
+			users_db.add_university(user_id, domain)
+			users_db.add_email_address(user_id, email_address_input)
+			users_db.change_profile_step(user_id, TYPING_VERIFY_CODE)
+			return 0
+	return -1
 
 
 def verify_code(update: Update, context: CallbackContext) -> int:
