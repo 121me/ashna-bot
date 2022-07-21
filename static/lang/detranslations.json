@@ -22,7 +22,7 @@
   "üniversite e-mail adresi": "email",
   "cinsiyet": "gender",
   "biyo": "bio",
-  "so": "sexual orientation",
+  "cinsel yönelim": "so",
   "dil": "language",
-  "media:": "media"
+  "medya:": "media"
 }
