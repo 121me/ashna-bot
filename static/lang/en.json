@@ -1,6 +1,7 @@
 {
   "main_menu": "1. /swipe other users\n2. /edit your profile\n3. view your /profile",
   "edit_menu": "1. Gender\n2. Bio\n3. Sexual Orientation\n4. Language\n5. Media\n6. /cancel",
+  "language": "language",
   "name": "name",
   "age": "age",
   "gender": "gender",

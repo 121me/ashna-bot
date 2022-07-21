@@ -1,6 +1,7 @@
 {
   "main_menu": "1. /swipe diğer kullanıcıları kaydırın\n2. /edit profilinizi düzenleyin\n3. /profile profilinizi görüntüleyin",
   "edit_menu": "1. Cinsiyet\n2. Biyo\n3. Cinsel Yönelim\n4. Dil\n5. Medya\n6. /cancel iptal et",
+  "language": "dil",
   "name": "isim",
   "age": "yaş",
   "gender": "cinsiyet",
