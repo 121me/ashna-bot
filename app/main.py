@@ -2,7 +2,7 @@ import string
 from datetime import datetime
 from functools import wraps
 
-from telegram import Update
+from telegram import Update, ReplyKeyboardRemove
 from telegram.error import BadRequest
 from telegram.ext import Updater, CommandHandler, MessageHandler, ConversationHandler, Filters, CallbackContext, \
 	CallbackQueryHandler
@@ -143,10 +143,6 @@ def verify_method_keyboard(lan: str) -> list:
 	return [[KeyboardButton(translate(vm, lan)) for vm in verify_methods]]
 
 
-def change_verify_method_keyboard(lan: str) -> list:
-	return [[KeyboardButton(translate('change_vm', lan))]]
-
-
 # markups
 decision_reply_markup = ReplyKeyboardMarkup(
 	decision_keyboard,
@@ -214,16 +210,11 @@ def verify_method_reply_markup(lan: str):
 		resize_keyboard=True)
 
 
-def change_verify_method_reply_markup(lan: str):
-	return ReplyKeyboardMarkup(
-		change_verify_method_keyboard(lan),
-		one_time_keyboard=True,
-		resize_keyboard=True)
-
-
 rps_inline_markup = InlineKeyboardMarkup(
 	rps_keyboard
 )
+
+remove_reply_markup = ReplyKeyboardRemove()
 
 # states
 (CHOOSING_LANG,
@@ -272,7 +263,6 @@ def restricted(func):
 	@wraps(func)
 	def wrapped(update, context, *args, **kwargs):
 		user_id = update.effective_user.id
-		print(user_id)
 		if user_id not in LIST_OF_ADMINS:
 			print("Unauthorized access denied for {}.".format(user_id))
 			return
@@ -281,38 +271,31 @@ def restricted(func):
 	return wrapped
 
 
-def verified(func):
-	@wraps(func)
-	def wrapped(update, context, *args, **kwargs):
-		user_id = update.effective_user.id
-		if user_id not in LIST_OF_ADMINS:
-			pass
-
-	return wrapped
-
-
 # create profile handler commands
 def start(update: Update, context: CallbackContext) -> int:
 	user_id = update.effective_user.id
+	username = update.effective_user.username
 	user_dict = users_db.get_user(user_id)
 
 	if user_dict:
 		if user_dict["is_profile_complete"]:
 			update.effective_message.reply_text(
-				text=translate("welcome_again_1", user_dict["lang"]))
+				text=translate("welcome_again_1", user_dict["lang"]),
+				reply_markup=remove_reply_markup,
+			)
 			profile(update, context)
 			return cancel(update, context)  # LOOK THERE LATER
 		else:
 			update.effective_message.reply_text(
-				text=translate("welcome_again_2", user_dict["lang"]))
+				text=translate("welcome_again_2", user_dict["lang"]),
+				reply_markup=remove_reply_markup)
 			return find_missing_for_profile(update, context)
 	else:
-		users_db.add_initial(user_id)
+		users_db.add_initial(user_id, username)
 
 		update.effective_message.reply_text(
 			text="Dil, Language?",
 			reply_markup=language_reply_markup)
-		print('here')
 		return CHOOSING_LANG
 
 
@@ -323,10 +306,8 @@ def find_missing_for_profile(update: Update, context: CallbackContext) -> int:
 	is_profile_complete = False
 
 	for v, k in list(steps_zip):
-		print(v, k)
 		if not user_dict[k]:
 			users_db.change_profile_step(user_id, v)
-			print(k, v)
 			profile_step = v
 			break
 	else:
@@ -339,7 +320,6 @@ def find_missing_for_profile(update: Update, context: CallbackContext) -> int:
 			is_profile_complete = user_dict["is_profile_complete"]
 		else:
 			profile_step = 0
-			print("hey")
 
 	lan = user_dict["lang"] or "en"
 
@@ -350,11 +330,13 @@ def find_missing_for_profile(update: Update, context: CallbackContext) -> int:
 
 	elif profile_step == 1:
 		update.effective_message.reply_text(
-			text=translate("send_name", lan))
+			text=translate("send_name", lan),
+			reply_markup=remove_reply_markup)
 
 	elif profile_step == 2:
 		update.effective_message.reply_text(
-			text=translate("send_age", lan))
+			text=translate("send_age", lan),
+			reply_markup=remove_reply_markup)
 
 	elif profile_step == 3:
 		update.effective_message.reply_text(
@@ -368,7 +350,8 @@ def find_missing_for_profile(update: Update, context: CallbackContext) -> int:
 
 	elif profile_step == 5:
 		update.effective_message.reply_text(
-			text=translate("send_media", lan))
+			text=translate("send_media", lan),
+			reply_markup=remove_reply_markup)
 
 	elif profile_step == 6:
 		update.effective_message.reply_text(
@@ -378,10 +361,12 @@ def find_missing_for_profile(update: Update, context: CallbackContext) -> int:
 	elif profile_step == 10:
 		if is_profile_complete:
 			update.effective_message.reply_text(
-				text=translate("profile_completed", lan))
+				text=translate("profile_completed", lan),
+				reply_markup=remove_reply_markup)
 			profile(update, context)
 			update.effective_message.reply_text(
-				text=translate("main_menu", lan))
+				text=translate("main_menu", lan),
+				reply_markup=remove_reply_markup)
 		else:
 			update.effective_message.reply_text(
 				text=translate("checking_profile", lan),
@@ -412,14 +397,17 @@ def lang_choice(update: Update, context: CallbackContext) -> int:
 
 	if result == 1:
 		update.effective_message.reply_text(
-			text=f"Language set to {update.effective_message.text}")  # TODO
+			text=f"Language set to {update.effective_message.text}",
+			reply_markup=remove_reply_markup)
 		update.effective_message.reply_text(
-			text=translate("new_user", user_dict["lang"]))
+			text=translate("new_user", user_dict["lang"]),
+			reply_markup=remove_reply_markup)
 		return find_missing_for_profile(update, context)
 
 	elif result == 0:
-		update.effective_message.reply_text(text=translate(
-			"lang_warning", user_dict["lang"]))
+		update.effective_message.reply_text(
+			text=translate("lang_warning", user_dict["lang"]),
+			reply_markup=language_reply_markup)
 		return CHOOSING_LANG
 	return CHOOSING_LANG
 
@@ -435,16 +423,20 @@ def name_choice(update: Update, context: CallbackContext) -> int:
 
 	elif result == 0:
 		update.effective_message.reply_text(
-			text=translate("name_warning", user_dict["lang"]))
-		update.effective_message.reply_text(text=translate(
-			"send_name", user_dict["lang"]))
+			text=translate("name_warning", user_dict["lang"]),
+			reply_markup=remove_reply_markup)
+		update.effective_message.reply_text(
+			text=translate("send_name", user_dict["lang"]),
+			reply_markup=remove_reply_markup)
 		return TYPING_NAME
 
 	elif result == -1:
 		update.effective_message.reply_text(
-			text=translate("send_name_but", user_dict["lang"]))
-		update.effective_message.reply_text(text=translate(
-			"send_name", user_dict["lang"]))
+			text=translate("send_name_but", user_dict["lang"]),
+			reply_markup=remove_reply_markup)
+		update.effective_message.reply_text(
+			text=translate("send_name", user_dict["lang"]),
+			reply_markup=remove_reply_markup)
 		return TYPING_NAME
 
 
@@ -459,16 +451,20 @@ def age_choice(update: Update, context: CallbackContext) -> int:
 
 	elif result == 0:
 		update.effective_message.reply_text(
-			text=translate("age_warning", user_dict["lang"]))
+			text=translate("age_warning", user_dict["lang"]),
+			reply_markup=remove_reply_markup)
 		update.effective_message.reply_text(
-			text=translate("send_age", user_dict["lang"]))
+			text=translate("send_age", user_dict["lang"]),
+			reply_markup=remove_reply_markup)
 		return TYPING_AGE
 
 	elif result == -1:
 		update.effective_message.reply_text(
-			text=translate("send_age_but", user_dict["lang"]))
+			text=translate("send_age_but", user_dict["lang"]),
+			reply_markup=remove_reply_markup)
 		update.effective_message.reply_text(
-			text=translate("send_age", user_dict["lang"]))
+			text=translate("send_age", user_dict["lang"]),
+			reply_markup=remove_reply_markup)
 		return TYPING_AGE
 
 
@@ -483,9 +479,11 @@ def gender_choice(update: Update, context: CallbackContext) -> int:
 
 	elif result == 0:
 		update.effective_message.reply_text(
-			text=translate("gender_warning", user_dict["lang"]))
+			text=translate("gender_warning", user_dict["lang"]),
+			reply_markup=remove_reply_markup)
 		update.effective_message.reply_text(
-			text=translate("send_gender", user_dict["lang"]))
+			text=translate("send_gender", user_dict["lang"]),
+			reply_markup=remove_reply_markup)
 		return CHOOSING_GENDER
 
 
@@ -500,16 +498,20 @@ def bio_choice(update: Update, context: CallbackContext) -> int:
 
 	elif result == 0:
 		update.effective_message.reply_text(
-			text=translate("bio_skipped", user_dict["lang"]))
+			text=translate("bio_skipped", user_dict["lang"]),
+			reply_markup=remove_reply_markup)
 		update.effective_message.reply_text(
-			text=translate("send_media", user_dict["lang"]))
+			text=translate("send_media", user_dict["lang"]),
+			reply_markup=remove_reply_markup)
 		return SENDING_MEDIA
 
 	elif result == -1:
 		update.effective_message.reply_text(
-			text=translate("bio_warning", user_dict["lang"]))
+			text=translate("bio_warning", user_dict["lang"]),
+			reply_markup=remove_reply_markup)
 		update.effective_message.reply_text(
-			text=translate("send_bio", user_dict["lang"]))
+			text=translate("send_bio", user_dict["lang"]),
+			reply_markup=skip_reply_markup(user_dict["lang"]))
 		return TYPING_BIO
 
 
@@ -550,16 +552,20 @@ def media_choice(update: Update, context: CallbackContext) -> int:
 
 	elif result == 0:
 		update.effective_message.reply_text(
-			text=translate("media_size_warning", user_dict["lang"]))
+			text=translate("media_size_warning", user_dict["lang"]),
+			reply_markup=remove_reply_markup)
 		update.effective_message.reply_text(
-			text=translate("send_media", user_dict["lang"]))
+			text=translate("send_media", user_dict["lang"]),
+			reply_markup=remove_reply_markup)
 		return SENDING_MEDIA
 
 	elif result == -1:
 		update.effective_message.reply_text(
-			text=translate("media_warning", user_dict["lang"]))
+			text=translate("media_warning", user_dict["lang"]),
+			reply_markup=remove_reply_markup)
 		update.effective_message.reply_text(
-			text=translate("send_media", user_dict["lang"]))
+			text=translate("send_media", user_dict["lang"]),
+			reply_markup=remove_reply_markup)
 		return SENDING_MEDIA
 
 
@@ -571,17 +577,21 @@ def verify_method_choice(update: Update, context: CallbackContext) -> int:
 
 	if result == SENDING_STUDENT_CARD:
 		update.effective_message.reply_text(
-			text=translate("send_student_card", user_dict["lang"]))
+			text=translate("send_student_card", user_dict["lang"]),
+			reply_markup=remove_reply_markup)
 		return SENDING_STUDENT_CARD
 	elif result == TYPING_EMAIL_ADDRESS:
 		update.effective_message.reply_text(
-			text=translate("send_email_address", user_dict["lang"]))
+			text=translate("send_email_address", user_dict["lang"]),
+			reply_markup=remove_reply_markup)
 		return TYPING_EMAIL_ADDRESS
 	else:
 		update.effective_message.reply_text(
-			text=translate("verify_method_warning", user_dict["lang"]))
+			text=translate("verify_method_warning", user_dict["lang"]),
+			reply_markup=remove_reply_markup)
 		update.effective_message.reply_text(
-			text=translate("send_verify_method", user_dict["lang"]))
+			text=translate("send_verify_method", user_dict["lang"]),
+			reply_markup=verify_method_reply_markup(user_dict["lang"]))
 		return CHOOSING_VERIFY_METHOD
 
 
@@ -596,12 +606,16 @@ def student_card_choice(update: Update, context: CallbackContext) -> int:
 			text=translate("checking_profile", user_dict["lang"]),
 			reply_markup=rps_inline_markup)
 		send_message_to_admins(update, context, f'IDLING: {user_id}')
+		for _id in LIST_OF_ADMINS:
+			send_profile(user_id, _id, context)
 		return IDLING
 	else:
 		update.effective_message.reply_text(
-			text=translate("student_card_warning", user_dict["lang"]))
+			text=translate("student_card_warning", user_dict["lang"]),
+			reply_markup=remove_reply_markup)
 		update.effective_message.reply_text(
-			text=translate("send_student_card", user_dict["lang"]))
+			text=translate("send_student_card", user_dict["lang"]),
+			reply_markup=remove_reply_markup)
 		return SENDING_STUDENT_CARD
 
 
@@ -613,7 +627,8 @@ def email_address_choice(update: Update, context: CallbackContext) -> int:
 
 	if result == 1:
 		update.effective_message.reply_text(
-			text=translate("send_verification_code", user_dict["lang"]))
+			text=translate("send_verification_code", user_dict["lang"]),
+			reply_markup=remove_reply_markup)
 		# create a verification code with 6 integers
 		# save the verification code in the database
 		# send verification code to user's email address
@@ -625,9 +640,11 @@ def email_address_choice(update: Update, context: CallbackContext) -> int:
 
 	elif result == 0:
 		update.effective_message.reply_text(
-			text=translate("university_not_in_list", user_dict["lang"]).format(", ".join(domains.keys())))
+			text=translate("university_not_in_list", user_dict["lang"]).format(", ".join(domains.keys())),
+			reply_markup=remove_reply_markup)
 		update.effective_message.reply_text(
-			text=translate("send_verification_code", user_dict["lang"]))
+			text=translate("send_verification_code", user_dict["lang"]),
+			reply_markup=remove_reply_markup)
 		# create a verification code with 6 integers
 		# save the verification code in the database
 		# send verification code to user's email address
@@ -639,9 +656,11 @@ def email_address_choice(update: Update, context: CallbackContext) -> int:
 
 	elif result == -1:
 		update.effective_message.reply_text(
-			text=translate("email_address_warning", user_dict["lang"]).format(", ".join(domains.keys())))
+			text=translate("email_address_warning", user_dict["lang"]).format(", ".join(domains.keys())),
+			reply_markup=remove_reply_markup)
 		update.effective_message.reply_text(
-			text=translate("send_email_address", user_dict["lang"]))
+			text=translate("send_email_address", user_dict["lang"]),
+			reply_markup=remove_reply_markup)
 		return TYPING_EMAIL_ADDRESS
 
 
@@ -656,12 +675,16 @@ def verify_code_choice(update: Update, context: CallbackContext) -> int:
 			text=translate("checking_profile", user_dict["lang"]),
 			reply_markup=rps_inline_markup)
 		send_message_to_admins(update, context, f'IDLING: {user_id}')
+		for _id in LIST_OF_ADMINS:
+			send_profile(user_id, _id, context)
 		return IDLING
 	elif result == 0:
 		update.effective_message.reply_text(
-			text=translate("verify_code_warning", user_dict["lang"]))
+			text=translate("verify_code_warning", user_dict["lang"]),
+			reply_markup=remove_reply_markup)
 		update.effective_message.reply_text(
-			text=translate("send_verification_code", user_dict["lang"]))
+			text=translate("send_verification_code", user_dict["lang"]),
+			reply_markup=remove_reply_markup)
 		return TYPING_VERIFY_CODE
 
 
@@ -694,8 +717,7 @@ def rps_game(update: Update, context: CallbackContext) -> int:
 	context.dispatcher.bot.send_message(
 		chat_id=user_id,
 		text=translate("rps_again", user_dict["lang"]),
-		reply_markup=rps_inline_markup
-	)
+		reply_markup=rps_inline_markup)
 	return IDLING
 
 
@@ -710,8 +732,8 @@ def edit_profile(update: Update, context: CallbackContext) -> int:
 		return CHOOSING_EDIT
 
 	update.effective_message.reply_text(
-		text=translate("no_profile_no_command", user_dict["lang"])
-	)
+		text=translate("no_profile_no_command", user_dict["lang"]),
+		reply_markup=remove_reply_markup)
 	return DONE
 
 
@@ -723,14 +745,14 @@ def choose_edit(update: Update, context: CallbackContext) -> int:
 		user_input = update.effective_message.text
 
 		if (input_user_edit_choice := detranslate(user_input)) in edit_options.keys():
-			print(input_user_edit_choice)
 			choice_state = edit_options[input_user_edit_choice]
 		else:
 			raise ValueError
 
 	except (ValueError, TypeError):
 		update.effective_message.reply_text(
-			text=translate("send_valid", user_dict["lang"]))
+			text=translate("send_valid", user_dict["lang"]),
+			reply_markup=edit_menu_reply_markup(user_dict["lang"]))
 		return CHOOSING_EDIT
 
 	update.effective_message.reply_text(
@@ -750,9 +772,11 @@ def gender_edit(update: Update, context: CallbackContext) -> int:
 
 	elif result == 0:
 		update.effective_message.reply_text(
-			text=translate("gender_warning", user_dict["lang"]))
+			text=translate("gender_warning", user_dict["lang"]),
+			reply_markup=remove_reply_markup)
 		update.effective_message.reply_text(
-			text=translate("send_gender_c", user_dict["lang"]))
+			text=translate("send_gender_c", user_dict["lang"]),
+			reply_markup=gender_reply_markup(user_dict["lang"]))
 		return EDITING_GENDER
 
 
@@ -768,15 +792,18 @@ def bio_edit(update: Update, context: CallbackContext) -> int:
 
 	elif result == 0:
 		update.effective_message.reply_text(
-			text=translate("bio_skipped", user_dict["lang"]))
+			text=translate("bio_skipped", user_dict["lang"]),
+			reply_markup=remove_reply_markup)
 		profile(update, context)
 		return cancel(update, context)
 
 	elif result == -1:
 		update.effective_message.reply_text(
-			text=translate("bio_warning", user_dict["lang"]))
+			text=translate("bio_warning", user_dict["lang"]),
+			reply_markup=remove_reply_markup)
 		update.effective_message.reply_text(
-			text=translate("send_bio_c", user_dict["lang"]))
+			text=translate("send_bio_c", user_dict["lang"]),
+			reply_markup=skip_reply_markup(user_dict["lang"]))
 		return EDITING_BIO
 
 
@@ -790,9 +817,11 @@ def so_edit(update: Update, context: CallbackContext) -> int:
 		return cancel(update, context)
 	elif result == 0:
 		update.effective_message.reply_text(
-			text=translate("so_warning", user_dict["lang"]))
+			text=translate("so_warning", user_dict["lang"]),
+			reply_markup=remove_reply_markup)
 		update.effective_message.reply_text(
-			text=translate("send_so_c", user_dict["lang"]))
+			text=translate("send_so_c", user_dict["lang"]),
+			reply_markup=so_reply_markup(user_dict["lang"]))
 		return EDITING_SO
 
 
@@ -805,10 +834,12 @@ def language_edit(update: Update, context: CallbackContext) -> int:
 	if result == 1:
 		return cancel(update, context)
 	elif result == 0:
-		update.effective_message.reply_text(text=translate(
-			"lang_warning", user_dict["lang"]))
-		update.effective_message.reply_text(text=translate(
-			"send_lang_c", user_dict["lang"]))
+		update.effective_message.reply_text(
+			text=translate("lang_warning", user_dict["lang"]),
+			reply_markup=remove_reply_markup)
+		update.effective_message.reply_text(
+			text=translate("send_lang_c", user_dict["lang"]),
+			reply_markup=language_reply_markup)
 		return EDITING_LANGUAGE
 
 
@@ -824,9 +855,11 @@ def media_edit(update: Update, context: CallbackContext) -> int:
 
 	elif result == 0:
 		update.effective_message.reply_text(
-			text=translate("media_warning", user_dict["lang"]))
+			text=translate("media_warning", user_dict["lang"]),
+			reply_markup=remove_reply_markup)
 		update.effective_message.reply_text(
-			text=translate("send_media_c", user_dict["lang"]))
+			text=translate("send_media_c", user_dict["lang"]),
+			reply_markup=remove_reply_markup)
 		return EDITING_MEDIA
 
 
@@ -993,8 +1026,8 @@ def email_address(update: Update, context: CallbackContext) -> int:
 	user_id = update.effective_user.id
 	email_address_input = update.effective_message.text
 
-	if re.search(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+', email_address_input)\
-and not users_db.check_email_address(email_address_input):
+	if re.search(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+', email_address_input) \
+			and not users_db.check_email_address(email_address_input):
 
 		_, domain = email_address_input.split('@')
 		if "edu.tr" not in domain:
@@ -1055,13 +1088,13 @@ def delete_profile(update: Update, context: CallbackContext) -> int:
 	if input_decision == "OK 👍":
 		users_db.delete_user(user_id)
 		update.effective_message.reply_text(
-			text=translate("profile_deleted", user_dict["lang"])
-		)
+			text=translate("profile_deleted", user_dict["lang"]),
+			reply_markup=remove_reply_markup)
 		return DONE
 
 	update.effective_message.reply_text(
-		text=translate("profile_delete_cancelled", user_dict["lang"])
-	)
+		text=translate("profile_delete_cancelled", user_dict["lang"]),
+		reply_markup=remove_reply_markup)
 	return cancel(update, context)
 
 
@@ -1084,15 +1117,12 @@ def about(update: Update, context: CallbackContext) -> None:
 	update.effective_message.reply_text(
 		text=translate("about", user_dict["lang"]),
 		parse_mode=ParseMode.HTML,
-		disable_web_page_preview=True)
+		disable_web_page_preview=True,
+		reply_markup=remove_reply_markup)
 	"""
 	if not user_dict[-1]:
 		user_lost(update, context)
 	"""
-
-
-def set_lang(update: Update, context: CallbackContext) -> None:
-	pass  # TODO
 
 
 def cancel(update: Update, context: CallbackContext) -> int:
@@ -1100,7 +1130,8 @@ def cancel(update: Update, context: CallbackContext) -> int:
 	user_dict = users_db.get_user(user_id)
 
 	update.effective_message.reply_text(
-		text=translate("main_menu", user_dict["lang"]))
+		text=translate("main_menu", user_dict["lang"]),
+		reply_markup=remove_reply_markup)
 	return DONE
 
 
@@ -1118,112 +1149,112 @@ def warning(update: Update, context: CallbackContext) -> int:
 
 	if user_dict["is_profile_complete"]:
 		update.effective_message.reply_text(
-			text=translate("swipe_warning",
-						   user_dict["lang"]),
+			text=translate("swipe_warning", user_dict["lang"]),
 			reply_markup=ok_nah_reply_markup)
 		return SWIPING
 
 	update.effective_message.reply_text(
-		text=translate("no_profile_no_command",
-					   user_dict["lang"])
-	)
+		text=translate("no_profile_no_command", user_dict["lang"]),
+		reply_markup=remove_reply_markup)
 	return DONE
 
 
 def swipe(update: Update, context: CallbackContext) -> int:
-	user_id = update.effective_user.id
-	user_dict = users_db.get_user(user_id)
+	user1_id = update.effective_user.id
+	user1_dict = users_db.get_user(user1_id)
+
+	# keep updating username every time user swipes
+	users_db.add_username(user1_id, update.effective_user.username)
 
 	text = update.effective_message.text
 
 	if text not in ["🚪", "OK 👍", "NAH 👎", "❤️", "👎", "⛔"]:
-		print(5)
 		unknown(update, context)
 		return cancel(update, context)
 
 	if text in ["🚪", "NAH 👎"]:
 		return cancel(update, context)
 
-	user_id_1 = user_id = update.effective_user.id
-	user_id_2 = users_db.get_pending_match(user_id)
+	user2_id = users_db.get_pending_match(user1_id)
+	user2_dict = users_db.get_user(user2_id)
 
-	if user_id_2:
+	if user2_id:
 		if text == "❤️":
-			print(1)
-			users_db.add_match(user_id_1, user_id_2, 1)
+			users_db.add_match(user1_id, user2_id, 1)
+			users_db.delete_pending_match(user1_id)
 
-			if users_db.check_perfect_match(user_id_2, user_id_1):
-				# TODO send both users each others link
-				users_db.delete_pending_match(user_id)
-				user_name_2 = users_db.get_user(user_id_2)["name"]
-				user_name = user_dict["name"]
+			if users_db.check_perfect_match(user2_id, user1_id):
 				update.effective_message.reply_text(
-					text=translate("match_notification", users_db.get_user(
-						user_id)["lang"]).format(user_id_2, user_name_2),
+					text=translate("match_notification", user1_dict["lang"]).format(user2_dict["username"],
+																					user2_dict["name"].capitalize()),
 					parse_mode=ParseMode.HTML,
-					disable_web_page_preview=True)
+					disable_web_page_preview=True,
+					reply_markup=remove_reply_markup)
 				try:
 					context.dispatcher.bot.send_message(
-						chat_id=user_id_2,
-						text=translate("match_notification", users_db.get_user(
-							user_id)["lang"]).format(user_id, user_name),
+						chat_id=user2_id,
+						text=translate("match_notification", user2_dict["lang"]).format(user1_dict["username"],
+																						user1_dict[
+																							"name"].capitalize()),
 						parse_mode=ParseMode.HTML,
-						disable_web_page_preview=True)
+						disable_web_page_preview=True,
+						reply_markup=remove_reply_markup)
 				except BadRequest:
 					pass
 				update.effective_message.reply_text(
 					text=translate(
-						"continue_swipe", user_dict["lang"]),
+						"continue_swipe", user1_dict["lang"]),
 					reply_markup=ok_nah_reply_markup
 				)
 				return SWIPING
 
 			else:
-				print(2)
-				swipe_user_id = users_db.get_next_swipe(user_id, user_dict['gender'], user_dict['so'])
+				swipe_user_id = users_db.get_next_swipe(user1_id, user1_dict['gender'], user1_dict['so'])
 				if swipe_user_id:
 					send_swipe_profile(update, swipe_user_id)
-					users_db.add_pending_match(user_id, swipe_user_id)
+					users_db.add_pending_match(user1_id, swipe_user_id)
 					return SWIPING
 				else:
-					users_db.delete_pending_match(user_id)
 					update.effective_message.reply_text(
-						text=translate("no_user", user_dict["lang"]))
+						text=translate("no_user", user1_dict["lang"]),
+						reply_markup=remove_reply_markup)
 					return cancel(update, context)
 
 		elif text == "👎":
-			users_db.add_match(user_id_1, user_id_2, 0)
-			users_db.add_match(user_id_2, user_id_1, 0)
+			users_db.add_match(user1_id, user2_id, 0)
+			users_db.add_match(user2_id, user1_id, 0)
 
-			swipe_user_id = users_db.get_next_swipe(user_id, user_dict['gender'], user_dict['so'])
+			users_db.delete_pending_match(user1_id)
+
+			swipe_user_id = users_db.get_next_swipe(user1_id, user1_dict['gender'], user1_dict['so'])
 			if swipe_user_id:
 				send_swipe_profile(update, swipe_user_id)
-				users_db.add_pending_match(user_id, swipe_user_id)
+				users_db.add_pending_match(user1_id, swipe_user_id)
 				return SWIPING
 
 		elif text == "OK 👍":
-			send_swipe_profile(update, user_id_2)
+			send_swipe_profile(update, user2_id)
 			return SWIPING
 
 		elif text == "⛔":
 			update.effective_message.reply_text(
-				text=translate("", user_dict["lang"]))
+				text=translate("", user1_dict["lang"]),
+				reply_markup=remove_reply_markup)
 			return COMPLAINING
-		print(3)
 	else:
 		if text == "OK 👍":
-			swipe_user_id = users_db.get_next_swipe(user_id, user_dict['gender'], user_dict['so'])
+			swipe_user_id = users_db.get_next_swipe(user1_id, user1_dict['gender'], user1_dict['so'])
 			if swipe_user_id:
 				send_swipe_profile(update, swipe_user_id)
-				users_db.add_pending_match(user_id, swipe_user_id)
+				users_db.add_pending_match(user1_id, swipe_user_id)
 				return SWIPING
 			else:
 				update.effective_message.reply_text(
-					text=translate("no_user", user_dict["lang"]))
+					text=translate("no_user", user1_dict["lang"]),
+					reply_markup=remove_reply_markup)
 				return cancel(update, context)
 		else:
 			return cancel(update, context)
-	print(4)
 
 
 def complain(update: Update, context: CallbackContext) -> int:
@@ -1260,7 +1291,7 @@ def profile(update: Update, context: CallbackContext) -> None:
 	if not user_dict["is_profile_complete"]:
 		update.effective_message.reply_text(
 			text=translate("no_profile_no_command", user_dict["lang"]),
-		)
+			reply_markup=remove_reply_markup)
 		return DONE
 
 	user_media_path = f"""{media_path}/{user_id}/{user_dict["last_saved_media_name"]}.{user_dict["media_type"]}"""
@@ -1269,10 +1300,6 @@ def profile(update: Update, context: CallbackContext) -> None:
 		media_bytes = file.read()
 
 	user_name, user_university = user_dict["name"].title(), user_dict["university"].title()
-
-	print("hey", user_university, "hey")
-
-	print(user_dict["media_type"])
 
 	if user_dict["media_type"] == 'jpg':
 		update.effective_message.reply_photo(
@@ -1288,18 +1315,18 @@ def profile(update: Update, context: CallbackContext) -> None:
 		)
 	else:
 		update.effective_message.reply_text(
-			text="error_report_this_2_admin"
-		)
+			text="error_report_this_2_admin",
+			reply_markup=remove_reply_markup)
 
 
-def send_profile(user_id: int, context: CallbackContext) -> None:
+def send_profile(user_id: int, to: int, context: CallbackContext) -> None:
 	user_dict = users_db.get_user(user_id)
 
 	if not user_dict["is_profile_complete"]:
 		context.dispatcher.bot.send_message(
 			chat_id=user_id,
 			text=translate("no_profile_no_command", user_dict["lang"]),
-		)
+			reply_markup=remove_reply_markup)
 		return DONE
 
 	user_media_path = f"""{media_path}/{user_id}/{user_dict["last_saved_media_name"]}.{user_dict["media_type"]}"""
@@ -1309,29 +1336,25 @@ def send_profile(user_id: int, context: CallbackContext) -> None:
 
 	user_name, user_university = user_dict["name"].title(), user_dict["university"].title()
 
-	print("hey", user_university, "hey")
-
-	print(user_dict["media_type"])
-
 	if user_dict["media_type"] == 'jpg':
 		context.dispatcher.bot.send_photo(
-			chat_id=user_id,
+			chat_id=to,
 			photo=media_bytes,
 			caption=f"""{user_name}, {calculate_age(user_dict["age"])}, {user_university}\n{'😁💬:'}{user_dict["bio"]
 			if not user_dict["bio"] == "no_bio" else translate("no_bio", user_dict["lang"])}""",
 		)
 	elif user_dict["media_type"] == 'mp4':
 		context.dispatcher.bot.send_video(
-			chat_id=user_id,
+			chat_id=to,
 			video=media_bytes,
 			caption=f"""{user_name}, {calculate_age(user_dict["age"])}, {user_university}\n{'😁💬: '}{user_dict["bio"]
 			if not user_dict["bio"] == "no_bio" else translate("no_bio", user_dict["lang"])}""",
 		)
 	else:
 		context.dispatcher.bot.send_message(
-			chat_id=user_id,
-			text="error_report_this_2_admin"
-		)
+			chat_id=to,
+			text="error_report_this_2_admin",
+			reply_markup=remove_reply_markup)
 
 
 def send_swipe_profile(update: Update, swipe_user_id: int) -> None:
@@ -1344,8 +1367,6 @@ def send_swipe_profile(update: Update, swipe_user_id: int) -> None:
 
 	user_name, user_university = user_dict["name"].title(), user_dict["university"].title()
 
-	print(user_dict["media_type"])
-
 	if user_dict["media_type"] == 'jpg':
 		update.effective_message.reply_photo(
 			photo=media_bytes,
@@ -1360,15 +1381,16 @@ def send_swipe_profile(update: Update, swipe_user_id: int) -> None:
 		)
 	else:
 		update.effective_message.reply_text(
-			text="error_report_this_2_admin"
-		)
+			text="error_report_this_2_admin",
+			reply_markup=remove_reply_markup)
 
 
 def send_message_to_admins(update: Update, context: CallbackContext, text: str) -> None:
 	for admin_id in LIST_OF_ADMINS:
 		context.dispatcher.bot.send_message(
 			chat_id=admin_id,
-			text=text)
+			text=text,
+			reply_markup=remove_reply_markup)
 
 
 @restricted
@@ -1379,14 +1401,13 @@ def set_user_attrs(update: Update, context: CallbackContext) -> None:
 		_, user_id, *args = text.split()
 	except ValueError:
 		update.effective_message.reply_text(
-			text="Message format: user_id user_attribute_1 value_1 user_attribute_2 value_2 ... user_attribute_n value_n")
-		return
-	print(user_id, args)
+			text="Message format: user_id user_attribute_1 value_1 user_attribute_2 value_2 ... user_attribute_n value_n",
+			reply_markup=remove_reply_markup)
+		return DONE
 	user_id = int(user_id)
 
 	# convert attrs to dictionary
 	attrs_values = dict(zip(args[::2], args[1::2]))
-	print(attrs_values)
 
 	# update user attrs
 	for attr, value in attrs_values.items():
@@ -1403,7 +1424,8 @@ def verify_user(update: Update, context: CallbackContext) -> None:
 
 		if not user_dict:
 			update.effective_message.reply_text(
-				text=f"User {user_id} not found")
+				text=f"User {user_id} not found",
+				reply_markup=remove_reply_markup)
 			continue
 
 		lan = user_dict['lang']
@@ -1412,12 +1434,17 @@ def verify_user(update: Update, context: CallbackContext) -> None:
 
 		context.dispatcher.bot.send_message(
 			chat_id=user_id,
-			text=translate('profile_completed', lan))
-		send_profile(user_id, context)
-		update.effective_message.reply_text(
-			text=translate("main_menu", lan))
+			text=translate('profile_completed', lan),
+			reply_markup=remove_reply_markup)
+		send_profile(user_id, user_id, context)
+		context.dispatcher.bot.send_message(
+			chat_id=user_id,
+			text=translate("main_menu", lan),
+			reply_markup=remove_reply_markup)
 
-		update.effective_message.reply_text(text=f"{user_id} marked as completed")  # map to list?
+		update.effective_message.reply_text(
+			text=f"{user_id} marked as completed",
+			reply_markup=remove_reply_markup)
 
 
 @restricted
@@ -1426,7 +1453,8 @@ def send_message_all_users(update: Update, context: CallbackContext, text: str) 
 	for user_id in user_ids:
 		context.dispatcher.bot.send_message(
 			chat_id=user_id,
-			text=text)
+			text=text,
+			reply_markup=remove_reply_markup)
 
 
 def main():
@@ -1527,6 +1555,7 @@ def main():
 		fallbacks=[
 			help_handler,
 			about_handler,
+			cancel_handler,
 			MessageHandler(Filters.all, unknown_for_profile),
 		]
 	)

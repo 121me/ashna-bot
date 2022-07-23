@@ -1,5 +1,5 @@
 {
-  "main_menu": "1. /swipe other users\n2. /edit your profile\n3. view your /profile",
+  "main_menu": "1. /start create profile\n2. /swipe other users\n3. /edit your profile\n4. view your /profile",
   "edit_menu": "1. Gender\n2. Bio\n3. Sexual Orientation\n4. Language\n5. Media\n6. /cancel",
   "language": "language",
   "name": "name",
@@ -61,7 +61,7 @@
   "about": "    Ashna Bot\n2021-..\nMelih Aksoy\n\nIt is a self-made project to practise coding, look at what I have done)))\n\nemail : 125melih125@gmail.com\ngithub : <a href='https://www.github.com/121me'>121me</a>\ninsta : <a href='https://www.instagram.com/pardonmyturkish'>pardonmyturkish</a>\nvk : <a href='https://www.vk.com/pardonmyturkish'>pardonmyturkish</a>\ntelegram : <a href='https://t.me/MelihAksoy'>MelihAksoy</a>",
   "help": "If you are stuck, just type /cancel and then type /start or stop the bot and restart it from settings above. If it does not solve your issue, type /about and contact me",
   "swipe_warning": "Reminder!\nKeep it in mind that there might be people impersonating someone else!\nProtect your privacy and DO NOT share any important personal information!",
-  "match_notification": "MATCH!!! Start talking with <a href=\"tg://user?id={}\">{}</a>",
+  "match_notification": "MATCH!!! Start talking with <a href=\"https://t.me/{}\">{}</a>",
   "continue_swipe": "Do you want to continue swiping?",
   "no_user": "There is no user out there for matching yet \uD83C\uDFDC️, check later again",
   "complain_menu": "🎭 Impersonating someone / fake\n💸 Asking for money\n🔞 Adult material in profile\n🔙 Go back"

@@ -6,6 +6,7 @@ from typing import Any
 date_time_format = "%Y.%m.%d.%H.%M.%S"
 user_attr = [
 	"id",
+	"username",
 	"name",
 	"age",
 	"university",
@@ -43,6 +44,7 @@ class UsersDB:
 		stmt = """
 		CREATE TABLE IF NOT EXISTS users(
 			id INTEGER,
+			username TEXT,
 			name TEXT,
 			age VARCHAR(10),
 			university TEXT,
@@ -85,10 +87,11 @@ class UsersDB:
 		self.con.commit()
 
 	# users functions
-	def add_initial(self, user_id: int) -> None:
-		stmt = "INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+	def add_initial(self, user_id: int, username) -> None:
+		stmt = "INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
 		args = (
 			user_id,
+			username,
 			'',
 			'',
 			'',
@@ -122,6 +125,12 @@ class UsersDB:
 	def add_name(self, user_id: int, user_name: str) -> None:
 		stmt = "UPDATE users SET name = ?, profile_step = 2 WHERE id = ?;"
 		args = (user_name, user_id)
+		self.cur.execute(stmt, args)
+		self.con.commit()
+
+	def add_username(self, user_id: int, username: str) -> None:
+		stmt = "UPDATE users SET username = ? WHERE id = ?;"
+		args = (username, user_id)
 		self.cur.execute(stmt, args)
 		self.con.commit()
 
@@ -186,6 +195,7 @@ class UsersDB:
 		self.cur.execute(stmt, args)
 		self.con.commit()
 
+	"""
 	def add_test_user(
 			self, user_id: int, name: str, university: str, gender: str, so: str,
 			media_type: str, is_profile_complete: int
@@ -200,6 +210,7 @@ class UsersDB:
 
 		if is_profile_complete:
 			self.mark_profile_as_completed(user_id)
+	"""
 
 	def change_profile_step(self, user_id: int, profile_step: int) -> None:
 		stmt = "UPDATE users SET profile_step = ? WHERE id = ?;"

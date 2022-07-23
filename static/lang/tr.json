@@ -1,5 +1,5 @@
 {
-  "main_menu": "1. /swipe diğer kullanıcıları kaydırın\n2. /edit profilinizi düzenleyin\n3. /profile profilinizi görüntüleyin",
+  "main_menu": "1. /start profilini oluştur\n2. /swipe diğer kullanıcıları kaydırın\n3. /edit profilinizi düzenleyin\n4. /profile profilinizi görüntüleyin",
   "edit_menu": "1. Cinsiyet\n2. Biyo\n3. Cinsel Yönelim\n4. Dil\n5. Medya\n6. /cancel iptal et",
   "language": "dil",
   "name": "isim",
@@ -61,7 +61,7 @@
   "about": " Ashna Bot\n2021-..\nMelih Aksoy\n\nKodlama pratiği yapmak için kendi yaptığım bir proje idi, bakın ne yaptım)))\n\nemail : 125melih125@gmail.com\ngithub : <a href='https://www.github.com/121me'>121me</a>\ninsta : <a href='https://www.instagram.com/pardonmyturkish'>pardonmyturkish</a> \nvk : <a href='https://www.vk.com/pardonmyturkish'>pardonmyturkish</a>\ntelegram : <a href='https://t.me/MelihAksoy'>MelihAksoy</a>",
   "help": "Eğer takıldıysan /cancel yazıp /start yazman yeterli veya botu yukarıdaki ayarlardan durdur ve baştan başlat. Eğer bu sorununu çözmezse /about yazıp benimle iletişime geç.",
   "swipe_warning": "Hatırlatıcı!\nBaşka birinin kimliğine bürünen kişilerin olabileceğini unutmayın!\nGizliliğinizi koruyun ve önemli kişisel bilgilerinizi PAYLAŞMAYIN!",
-  "match_notification": "MATCH!!! <a href=\"tg://user?id={}\">{}</a> ile konuşmaya başlayın",
+  "match_notification": "MATCH!!! <a href=\"https://t.me/{}\">{}</a> ile konuşmaya başlayın",
   "continue_swipe": "Kaydırma işlemine devam etmek istiyor musunuz?",
   "no_user": "Henüz eşleştirilecek kullanıcı yok \uD83C\uDFDC️, daha sonra tekrar kontrol edin",
   "complain_menu": "🎭 Birinin kimliğine bürünme / sahte\n💸 Para isteme\n🔞 Profilde yetişkinlere uygun materyal\n🔙 Geri dön"
