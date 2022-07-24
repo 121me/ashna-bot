@@ -1322,13 +1322,6 @@ def profile(update: Update, context: CallbackContext) -> None:
 def send_profile(user_id: int, to: int, context: CallbackContext) -> None:
 	user_dict = users_db.get_user(user_id)
 
-	if not user_dict["is_profile_complete"]:
-		context.dispatcher.bot.send_message(
-			chat_id=user_id,
-			text=translate("no_profile_no_command", user_dict["lang"]),
-			reply_markup=remove_reply_markup)
-		return DONE
-
 	user_media_path = f"""{media_path}/{user_id}/{user_dict["last_saved_media_name"]}.{user_dict["media_type"]}"""
 
 	with open(file=user_media_path, mode="rb") as file:
@@ -1341,15 +1334,13 @@ def send_profile(user_id: int, to: int, context: CallbackContext) -> None:
 			chat_id=to,
 			photo=media_bytes,
 			caption=f"""{user_name}, {calculate_age(user_dict["age"])}, {user_university}\n{'😁💬:'}{user_dict["bio"]
-			if not user_dict["bio"] == "no_bio" else translate("no_bio", user_dict["lang"])}""",
-		)
+			if not user_dict["bio"] == "no_bio" else translate("no_bio", user_dict["lang"])}""")
 	elif user_dict["media_type"] == 'mp4':
 		context.dispatcher.bot.send_video(
 			chat_id=to,
 			video=media_bytes,
 			caption=f"""{user_name}, {calculate_age(user_dict["age"])}, {user_university}\n{'😁💬: '}{user_dict["bio"]
-			if not user_dict["bio"] == "no_bio" else translate("no_bio", user_dict["lang"])}""",
-		)
+			if not user_dict["bio"] == "no_bio" else translate("no_bio", user_dict["lang"])}""")
 	else:
 		context.dispatcher.bot.send_message(
 			chat_id=to,
