@@ -67,5 +67,5 @@
   "fake": "\uD83C\uDFAD Birinin kimliğine bürünme / sahte",
   "money": "\uD83D\uDCB8 Para isteme",
   "adult": "\uD83D\uDD1E Profilde yetişkin materyal",
-  "complain_notification": "Kullanıcı {} rapor edildi, sebep: {}"
+  "complaint_notification": "Kullanıcı {} rapor edildi, sebep: {}"
 }

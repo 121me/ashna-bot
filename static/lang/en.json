@@ -67,5 +67,5 @@
   "fake": "\uD83C\uDFAD Impersonating someone / fake",
   "money": "\uD83D\uDCB8 Asking for money",
   "adult": "\uD83D\uDD1E Adult material in profile",
-  "complain_notification": "User {} reported, reason: {}"
+  "complaint_notification": "User {} reported, reason: {}"
 }

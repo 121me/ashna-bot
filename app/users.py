@@ -369,11 +369,12 @@ class UsersDB:
 
 	# complaints functions
 	def add_complaint(self, user1: int, user2: int, complaint: int) -> None:
-		stmt = "INSERT INTO complaints VALUES (?, ? ,?)"
+		stmt = "INSERT INTO complaints VALUES (?, ? ,?, ?)"
 		args = (
 			user1,
 			user2,
-			complaint
+			complaint,
+			datetime_now()
 		)
 		self.cur.execute(stmt, args)
 		self.con.commit()
