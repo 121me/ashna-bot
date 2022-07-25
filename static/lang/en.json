@@ -18,7 +18,7 @@
   "student_card": "student card",
   "university_email_address": "university email address",
   "new_user": "You are a new user!!! Let's create your profile first, shall we?",
-  "welcome_again_1": "You are already a member, welcome again 🥰",
+  "welcome_again_1": "You are already a member, welcome again! 🥰",
   "welcome_again_2": "Welcome again 🥰! You used to hang here but you forgot to add a few things to your profile",
   "no_profile_no_method": "You have not created a profile to use this method yet, so type /start",
   "no_bio": "No bio",
@@ -61,8 +61,11 @@
   "about": "    Ashna Bot\n2021-..\nMelih Aksoy\n\nIt is a self-made project to practise coding, look at what I have done)))\n\nemail : 125melih125@gmail.com\ngithub : <a href='https://www.github.com/121me'>121me</a>\ninsta : <a href='https://www.instagram.com/pardonmyturkish'>pardonmyturkish</a>\nvk : <a href='https://www.vk.com/pardonmyturkish'>pardonmyturkish</a>\ntelegram : <a href='https://t.me/MelihAksoy'>MelihAksoy</a>",
   "help": "If you are stuck, just type /cancel and then type /start or stop the bot and restart it from settings above. If it does not solve your issue, type /about and contact me",
   "swipe_warning": "Reminder!\nKeep it in mind that there might be people impersonating someone else!\nProtect your privacy and DO NOT share any important personal information!",
-  "match_notification": "MATCH!!! Start talking with <a href=\"https://t.me/{}\">{}</a>",
+  "match_notification": "MATCH!!! Start talking with <a href=\"https://t.me/{}\">{}</a>\n\nvvv Report the user vvv",
   "continue_swipe": "Do you want to continue swiping?",
   "no_user": "There is no user out there for matching yet \uD83C\uDFDC️, check later again",
-  "complain_menu": "🎭 Impersonating someone / fake\n💸 Asking for money\n🔞 Adult material in profile\n🔙 Go back"
+  "fake": "\uD83C\uDFAD Impersonating someone / fake",
+  "money": "\uD83D\uDCB8 Asking for money",
+  "adult": "\uD83D\uDD1E Adult material in profile",
+  "complain_notification": "User {} reported, reason: {}"
 }

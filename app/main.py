@@ -67,6 +67,12 @@ rps_cond = {
 	}
 }
 
+complains = {
+	1: 'fake',
+	2: 'money',
+	3: 'adult'
+}
+
 flag_and_language = {
 	"🇹🇷": "tr",
 	"🇬🇧": "en"
@@ -143,6 +149,12 @@ def verify_method_keyboard(lan: str) -> list:
 	return [[KeyboardButton(translate(vm, lan)) for vm in verify_methods]]
 
 
+def complain_keyboard(lan: str, user2_id) -> list:
+	"""🎭 Impersonating someone / fake\n💸 Asking for money\n🔞 Adult material in profile
+	   query.data: user2_id|complaint_type"""
+	return [[InlineKeyboardButton(text=translate(t, lan), callback_data=f'complaint|{user2_id}|{n}') for n, t in complains.items()]]
+
+
 # markups
 decision_reply_markup = ReplyKeyboardMarkup(
 	decision_keyboard,
@@ -208,6 +220,10 @@ def verify_method_reply_markup(lan: str):
 		verify_method_keyboard(lan),
 		one_time_keyboard=True,
 		resize_keyboard=True)
+
+
+def complain_reply_markup(lan: str, user2_id: int):
+	return InlineKeyboardMarkup(complain_keyboard(lan, user2_id))
 
 
 rps_inline_markup = InlineKeyboardMarkup(
@@ -692,7 +708,9 @@ def rps_game(update: Update, context: CallbackContext) -> int:
 	user_id = update.effective_user.id
 	user_dict = users_db.get_user(user_id)
 
-	user_input = update.callback_query.data
+	query = update.callback_query
+
+	user_input = query.data
 	bot_input = str(random.choice(list(rps_emojis.keys())))
 
 	result = rps_cond[user_input][bot_input]
@@ -706,8 +724,8 @@ def rps_game(update: Update, context: CallbackContext) -> int:
 	else:
 		text = "game_error"
 
-	update.callback_query.answer()
-	update.callback_query.edit_message_text(
+	query.answer()
+	query.edit_message_text(
 		text=text.format(rps_emojis[user_input], rps_emojis[bot_input]),
 		reply_markup=None
 	)
@@ -718,6 +736,7 @@ def rps_game(update: Update, context: CallbackContext) -> int:
 		chat_id=user_id,
 		text=translate("rps_again", user_dict["lang"]),
 		reply_markup=rps_inline_markup)
+
 	return IDLING
 
 
@@ -1038,7 +1057,13 @@ def email_address(update: Update, context: CallbackContext) -> int:
 			users_db.change_profile_step(user_id, TYPING_VERIFY_CODE)
 			return 1
 		except KeyError:
-			users_db.add_university(user_id, domain)
+			try:
+				uni_name = domain.split('.')[-3]
+			except IndexError:
+				return -1
+			if not uni_name:
+				return -1
+			users_db.add_university(user_id, uni_name)
 			users_db.add_email_address(user_id, email_address_input)
 			users_db.change_profile_step(user_id, TYPING_VERIFY_CODE)
 			return 0
@@ -1189,7 +1214,7 @@ def swipe(update: Update, context: CallbackContext) -> int:
 																					user2_dict["name"].capitalize()),
 					parse_mode=ParseMode.HTML,
 					disable_web_page_preview=True,
-					reply_markup=remove_reply_markup)
+					reply_markup=complain_reply_markup(user1_dict["lang"], user2_id))
 				try:
 					context.dispatcher.bot.send_message(
 						chat_id=user2_id,
@@ -1198,7 +1223,7 @@ def swipe(update: Update, context: CallbackContext) -> int:
 																							"name"].capitalize()),
 						parse_mode=ParseMode.HTML,
 						disable_web_page_preview=True,
-						reply_markup=remove_reply_markup)
+						reply_markup=complain_reply_markup(user1_dict["lang"], user2_id))
 				except BadRequest:
 					pass
 				update.effective_message.reply_text(
@@ -1280,6 +1305,43 @@ def complain(update: Update, context: CallbackContext) -> int:
 		text=translate("continue_swipe", user_dict["lang"]),
 		reply_markup=ok_nah_reply_markup)
 	return SWIPING
+
+
+def complain_v2(update: Update, context: CallbackContext) -> None:
+	user1_id = update.effective_user.id
+	user1_dict = users_db.get_user(user1_id)
+
+	query = update.callback_query
+
+	query.answer()
+
+	"""
+	query.data: 'complaint'|user2_id|complaint_type
+	"""
+
+	_, user2_id, complaint_type = query.data.split("|")
+
+	complaint_type = int(complaint_type)
+
+	user2_dict = users_db.get_user(user2_id)
+
+	text = translate("complaint_notification", user1_dict["lang"]) \
+		.format(user2_dict["name"].capitalize(), translate(complains[complaint_type], user1_dict['lang']))
+
+	query.edit_message_text(text=text)
+
+	users_db.delete_match(user1_id, user2_id)
+
+	users_db.add_match(user1_id, user2_id, 0)
+	users_db.add_match(user2_id, user1_id, 0)
+
+	users_db.add_complaint(user1_id, user2_id, complaint_type)
+
+	for admin_id in LIST_OF_ADMINS:
+		context.dispatcher.bot.send_message(
+			chat_id=admin_id,
+			text=text,
+			disable_web_page_preview=True)
 
 
 # app commands
@@ -1469,6 +1531,9 @@ def main():
 	delete_profile_handler = CommandHandler('delete', delete_profile_decision)
 	cancel_handler = CommandHandler('cancel', cancel)
 
+	# pattern complaint|complaint_id|complaint_type
+	complain_v2_handler = CallbackQueryHandler(complain_v2, pattern='^complaint')
+
 	# swipe conv entry
 	warning_handler = CommandHandler('swipe', warning)
 
@@ -1600,11 +1665,6 @@ def main():
 				MessageHandler(
 					Filters.text & (~Filters.command), swipe
 				)
-			],
-			COMPLAINING: [
-				MessageHandler(
-					Filters.text & (~Filters.command), complain
-				)
 			]
 		},
 		fallbacks=[
@@ -1630,6 +1690,7 @@ def main():
 	)
 
 	handlers = [
+		complain_v2_handler,
 		verify_user_handler,
 		set_user_attrs_handler,
 		send_message_all_users_handler,

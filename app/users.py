@@ -279,21 +279,33 @@ class UsersDB:
 		self.cur.execute(stmt, args)
 		self.con.commit()
 
+	def delete_match(self, user1_id: int, user2_id) -> None:
+		stmt = """DELETE FROM matches WHERE user1 = ? AND user2 = ?;
+				  DELETE FROM matches WHERE user1 = ? AND user2 = ?;"""
+		args = (
+			user1_id,
+			user2_id,
+			user2_id,
+			user1_id,
+		)
+		self.cur.execute(stmt, args)
+		self.con.commit()
+
 	# matches functions
-	def add_match(self, user_id_1: int, user_id_2: int, action: int) -> None:
+	def add_match(self, user1_id: int, user2_id: int, action: int) -> None:
 		stmt = "INSERT INTO matches VALUES (?, ?, ?, ?);"
 		args = (
-			user_id_1,
-			user_id_2,
+			user1_id,
+			user2_id,
 			action,
 			datetime.now().strftime(date_time_format)
 		)
 		self.cur.execute(stmt, args)
 		self.con.commit()
 
-	def check_perfect_match(self, user_id_1: int, user_id_2: int) -> bool:
+	def check_perfect_match(self, user1_id: int, user2_id: int) -> bool:
 		stmt = "SELECT EXISTS(SELECT 1 FROM matches WHERE user1 = ? and user2 = ? and liked = 1)"
-		args = (user_id_1, user_id_2)
+		args = (user1_id, user2_id)
 		self.cur.execute(stmt, args)
 		return self.cur.fetchone() == (1,)
 
