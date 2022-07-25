@@ -280,8 +280,7 @@ class UsersDB:
 		self.con.commit()
 
 	def delete_match(self, user1_id: int, user2_id) -> None:
-		stmt = """DELETE FROM matches WHERE user1 = ? AND user2 = ?;
-				  DELETE FROM matches WHERE user1 = ? AND user2 = ?;"""
+		stmt = "DELETE FROM matches WHERE (user1 = ? AND user2 = ?) OR (user1 = ? AND user2 = ?);"
 		args = (
 			user1_id,
 			user2_id,
